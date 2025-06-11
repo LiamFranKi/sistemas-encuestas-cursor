@@ -22,7 +22,8 @@ import {
   School as SchoolIcon,
   Person as PersonIcon,
   Assignment as AssignmentIcon,
-  ExitToApp as ExitToAppIcon
+  ExitToApp as ExitToAppIcon,
+  Help as HelpIcon
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -73,7 +74,9 @@ const DashboardLayout = ({ children }) => {
     { text: 'Dashboard', icon: <DashboardIcon sx={{ color: '#1976d2' }} />, path: '/dashboard' },
     { text: 'Grados', icon: <SchoolIcon sx={{ color: '#388e3c' }} />, path: '/grados' },
     { text: 'Docentes', icon: <PersonIcon sx={{ color: '#fbc02d' }} />, path: '/docentes' },
-    { text: 'Encuestas', icon: <AssignmentIcon sx={{ color: '#8e24aa' }} />, path: '/encuestas' }
+    { text: 'Encuestas', icon: <AssignmentIcon sx={{ color: '#8e24aa' }} />, path: '/encuestas' },
+    { text: 'Preguntas', icon: <HelpIcon sx={{ color: '#d32f2f' }} />, path: '/preguntas' },
+    { text: 'Alternativas', icon: <AssignmentIcon sx={{ color: '#1976d2' }} />, path: '/alternativas' },
   ];
 
   return (

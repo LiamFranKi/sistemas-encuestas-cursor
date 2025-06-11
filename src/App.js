@@ -12,6 +12,8 @@ import DashboardLayout from './components/Layout/DashboardLayout';
 import GradosList from './components/Grados/GradosList';
 import DocentesList from './components/Docentes/DocentesList';
 import EncuestasList from './components/Encuestas/EncuestasList';
+import PreguntasList from './components/Preguntas/PreguntasList';
+import AlternativasList from './components/Alternativas/AlternativasList';
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -88,8 +90,29 @@ const AppRoutes = () => {
             <EncuestasList />
           </DashboardLayout>
         </PrivateRoute>
-      } />
+      } />   
+      <Route
+        path="/preguntas"
+        element={
+          <PrivateRoute>
+            <DashboardLayout>
+              <PreguntasList />
+            </DashboardLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/alternativas"
+        element={
+          <PrivateRoute>
+            <DashboardLayout>
+              <AlternativasList />
+            </DashboardLayout>
+          </PrivateRoute>
+        }
+      />
     </Routes>
+    
   );
 };
 
