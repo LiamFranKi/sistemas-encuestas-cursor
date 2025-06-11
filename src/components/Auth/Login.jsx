@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import {
   Box,
   Button,
@@ -13,6 +14,7 @@ import {
 import { login } from '../../services/authService';
 
 const Login = () => {
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: '',
@@ -20,6 +22,16 @@ const Login = () => {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (user && !loading) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [user, loading, navigate]);
+
+  if (user) {
+    return null;
+  }
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -36,13 +48,10 @@ const Login = () => {
 
     try {
       await login(formData.email, formData.password);
-      setTimeout(() => {
-        navigate('/dashboard');
-      }, 100);
+      // El redirect lo maneja el useEffect
     } catch (error) {
       console.error('Error de login:', error);
       let errorMessage = 'Error al iniciar sesión';
-      
       if (error.code === 'auth/api-key-not-valid') {
         errorMessage = 'Error de configuración. Por favor, contacte al administrador.';
       } else {
@@ -66,9 +75,7 @@ const Login = () => {
             errorMessage = 'Error al iniciar sesión. Por favor, intente nuevamente';
         }
       }
-      
       setError(errorMessage);
-    } finally {
       setLoading(false);
     }
   };
@@ -96,13 +103,11 @@ const Login = () => {
           <Typography component="h1" variant="h5" gutterBottom>
             Iniciar Sesión
           </Typography>
-          
           {error && (
             <Alert severity="error" sx={{ width: '100%', mt: 2, mb: 2 }}>
               {error}
             </Alert>
           )}
-
           <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1, width: '100%' }}>
             <TextField
               margin="normal"
@@ -139,7 +144,7 @@ const Login = () => {
               sx={{ mt: 3, mb: 2 }}
               disabled={loading}
             >
-              {loading ? <CircularProgress size={24} color="inherit" /> : 'Iniciar Sesión'}
+              Iniciar Sesión
             </Button>
             <Button
               fullWidth
@@ -150,6 +155,11 @@ const Login = () => {
               ¿No tienes cuenta? Regístrate
             </Button>
           </Box>
+          {loading && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+              <CircularProgress size={32} color="primary" />
+            </Box>
+          )}
         </Paper>
       </Box>
     </Container>
