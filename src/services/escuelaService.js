@@ -243,11 +243,20 @@ export const crearAlternativa = async (alternativaData) => {
 
 export const obtenerAlternativas = async (preguntaId) => {
   try {
-    const q = query(
-      collection(db, 'alternativas'),
-      where('preguntaId', '==', preguntaId),
-      orderBy('orden')
-    );
+    let q;
+    const alternativasRef = collection(db, 'alternativas');
+    if (preguntaId) {
+      q = query(
+        alternativasRef,
+        where('preguntaId', '==', preguntaId),
+        orderBy('orden')
+      );
+    } else {
+      q = query(
+        alternativasRef,
+        orderBy('fecha_creacion', 'desc')
+      );
+    }
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(doc => ({
       id: doc.id,
@@ -255,6 +264,27 @@ export const obtenerAlternativas = async (preguntaId) => {
     }));
   } catch (error) {
     throw new Error('Error al obtener las alternativas: ' + error.message);
+  }
+};
+
+export const actualizarAlternativa = async (alternativaId, alternativaData) => {
+  try {
+    const docRef = doc(db, 'alternativas', alternativaId);
+    await updateDoc(docRef, {
+      ...alternativaData,
+      fecha_actualizacion: new Date()
+    });
+  } catch (error) {
+    throw new Error('Error al actualizar la alternativa: ' + error.message);
+  }
+};
+
+export const eliminarAlternativa = async (alternativaId) => {
+  try {
+    const docRef = doc(db, 'alternativas', alternativaId);
+    await deleteDoc(docRef);
+  } catch (error) {
+    throw new Error('Error al eliminar la alternativa: ' + error.message);
   }
 };
 
