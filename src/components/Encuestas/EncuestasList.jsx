@@ -155,16 +155,16 @@ const EncuestasList = () => {
         <TableContainer component={Paper}>
           <Table>
             <TableHead>
-              <TableRow>
-                <TableCell>Título</TableCell>
-                <TableCell>Descripción</TableCell>
-                <TableCell>Estado</TableCell>
-                <TableCell>Acciones</TableCell>
+              <TableRow sx={{ backgroundColor: '#308be7' }}>
+                <TableCell sx={{ color: '#fff' }}>Título</TableCell>
+                <TableCell sx={{ color: '#fff' }}>Descripción</TableCell>
+                <TableCell sx={{ color: '#fff' }}>Estado</TableCell>
+                <TableCell sx={{ color: '#fff' }}>Acciones</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {encuestas.map((encuesta) => (
-                <TableRow key={encuesta.id}>
+              {encuestas.map((encuesta, idx) => (
+                <TableRow key={encuesta.id} sx={idx % 2 === 0 ? { backgroundColor: '#e3f2fd' } : { backgroundColor: '#fff' }}>
                   <TableCell>{encuesta.titulo}</TableCell>
                   <TableCell>{encuesta.descripcion}</TableCell>
                   <TableCell>{encuesta.estado}</TableCell>

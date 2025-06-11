@@ -70,10 +70,10 @@ const DashboardLayout = ({ children }) => {
   }, [location.pathname]);
 
   const menuItems = [
-    { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
-    { text: 'Grados', icon: <SchoolIcon />, path: '/grados' },
-    { text: 'Docentes', icon: <PersonIcon />, path: '/docentes' },
-    { text: 'Encuestas', icon: <AssignmentIcon />, path: '/encuestas' }
+    { text: 'Dashboard', icon: <DashboardIcon sx={{ color: '#1976d2' }} />, path: '/dashboard' },
+    { text: 'Grados', icon: <SchoolIcon sx={{ color: '#388e3c' }} />, path: '/grados' },
+    { text: 'Docentes', icon: <PersonIcon sx={{ color: '#fbc02d' }} />, path: '/docentes' },
+    { text: 'Encuestas', icon: <AssignmentIcon sx={{ color: '#8e24aa' }} />, path: '/encuestas' }
   ];
 
   return (
@@ -103,6 +103,7 @@ const DashboardLayout = ({ children }) => {
           '& .MuiDrawer-paper': {
             width: drawerWidth,
             boxSizing: 'border-box',
+            backgroundColor: '#e3f2fd',
             ...(open ? {} : { width: theme => theme.spacing(7) })
           }
         }}
@@ -118,9 +119,14 @@ const DashboardLayout = ({ children }) => {
               <ListItem key={item.text} disablePadding>
                 <ListItemButton
                   selected={location.pathname === item.path}
+                  sx={location.pathname === item.path ? {
+                    backgroundColor: '#308be7',
+                    color: '#000',
+                    '& .MuiListItemIcon-root': { color: '#fff' },
+                  } : {}}
                   onClick={() => handleNavigation(item.path)}
                 >
-                  <ListItemIcon>{item.icon}</ListItemIcon>
+                  <ListItemIcon sx={{ minWidth: 36 }}>{item.icon}</ListItemIcon>
                   <ListItemText primary={item.text} />
                 </ListItemButton>
               </ListItem>

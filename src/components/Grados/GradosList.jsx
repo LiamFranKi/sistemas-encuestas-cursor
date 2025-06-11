@@ -197,12 +197,12 @@ const GradosList = () => {
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
-            <TableRow>
-              <TableCell>Nombre</TableCell>
-              <TableCell>Nivel</TableCell>
-              <TableCell>Estado</TableCell>
-              <TableCell align="center">Maestros</TableCell>
-              <TableCell>Acciones</TableCell>
+            <TableRow sx={{ backgroundColor: '#308be7' }}>
+              <TableCell sx={{ color: '#fff' }}>Nombre</TableCell>
+              <TableCell sx={{ color: '#fff' }}>Nivel</TableCell>
+              <TableCell sx={{ color: '#fff' }}>Estado</TableCell>
+              <TableCell align="center" sx={{ color: '#fff' }}>Maestros</TableCell>
+              <TableCell sx={{ color: '#fff' }}>Acciones</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -215,8 +215,8 @@ const GradosList = () => {
                 if (a.nombre > b.nombre) return 1;
                 return 0;
               })
-              .map((grado) => (
-                <TableRow key={grado.id}>
+              .map((grado, idx) => (
+                <TableRow key={grado.id} sx={idx % 2 === 0 ? { backgroundColor: '#e3f2fd' } : { backgroundColor: '#fff' }}>
                   <TableCell>{grado.nombre}</TableCell>
                   <TableCell>{grado.nivel}</TableCell>
                   <TableCell>{grado.estado}</TableCell>

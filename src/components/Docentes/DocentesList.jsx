@@ -166,17 +166,17 @@ const DocentesList = () => {
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
-            <TableRow>
-              <TableCell>Nombre</TableCell>
-              <TableCell>Email</TableCell>
-              <TableCell>Especialidad</TableCell>
-              <TableCell>Estado</TableCell>
-              <TableCell>Acciones</TableCell>
+            <TableRow sx={{ backgroundColor: '#308be7' }}>
+              <TableCell sx={{ color: '#fff' }}>Nombre</TableCell>
+              <TableCell sx={{ color: '#fff' }}>Email</TableCell>
+              <TableCell sx={{ color: '#fff' }}>Especialidad</TableCell>
+              <TableCell sx={{ color: '#fff' }}>Estado</TableCell>
+              <TableCell sx={{ color: '#fff' }}>Acciones</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {docentes.map((docente) => (
-              <TableRow key={docente.id}>
+            {docentes.map((docente, idx) => (
+              <TableRow key={docente.id} sx={idx % 2 === 0 ? { backgroundColor: '#e3f2fd' } : { backgroundColor: '#fff' }}>
                 <TableCell>{docente.nombre}</TableCell>
                 <TableCell>{docente.email}</TableCell>
                 <TableCell>{docente.especialidad}</TableCell>
