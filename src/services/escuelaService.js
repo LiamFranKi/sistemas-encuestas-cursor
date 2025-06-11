@@ -190,12 +190,12 @@ export const crearPregunta = async (preguntaData) => {
   }
 };
 
-export const obtenerPreguntas = async (encuestaId) => {
+export const obtenerPreguntas = async () => {
   try {
+    const preguntasRef = collection(db, 'preguntas');
     const q = query(
-      collection(db, 'preguntas'),
-      where('encuestaId', '==', encuestaId),
-      orderBy('orden')
+      preguntasRef,
+      orderBy('fecha_creacion', 'desc')
     );
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(doc => ({
@@ -204,6 +204,27 @@ export const obtenerPreguntas = async (encuestaId) => {
     }));
   } catch (error) {
     throw new Error('Error al obtener las preguntas: ' + error.message);
+  }
+};
+
+export const actualizarPregunta = async (preguntaId, preguntaData) => {
+  try {
+    const docRef = doc(db, 'preguntas', preguntaId);
+    await updateDoc(docRef, {
+      ...preguntaData,
+      fecha_actualizacion: new Date()
+    });
+  } catch (error) {
+    throw new Error('Error al actualizar la pregunta: ' + error.message);
+  }
+};
+
+export const eliminarPregunta = async (preguntaId) => {
+  try {
+    const docRef = doc(db, 'preguntas', preguntaId);
+    await deleteDoc(docRef);
+  } catch (error) {
+    throw new Error('Error al eliminar la pregunta: ' + error.message);
   }
 };
 
