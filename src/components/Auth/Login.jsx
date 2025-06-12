@@ -9,8 +9,11 @@ import {
   Container,
   Paper,
   Alert,
-  CircularProgress
+  CircularProgress,
+  InputAdornment
 } from '@mui/material';
+import EmailIcon from '@mui/icons-material/Email';
+import LockIcon from '@mui/icons-material/Lock';
 import { login } from '../../services/authService';
 
 const Login = () => {
@@ -81,88 +84,133 @@ const Login = () => {
   };
 
   return (
-    <Container component="main" maxWidth="xs">
-      <Box
-        sx={{
-          marginTop: 8,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-        }}
-      >
-        <Paper
-          elevation={3}
+    <Box sx={{
+      minHeight: '100vh',
+      width: '100vw',
+      background: 'linear-gradient(135deg, #f8fafc 0%, #e0e7ff 100%)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+    }}>
+      <Container component="main" maxWidth="xs" sx={{ zIndex: 2 }}>
+        <Box
           sx={{
-            padding: 4,
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            width: '100%',
           }}
         >
-          <Typography component="h1" variant="h5" gutterBottom>
-            Iniciar Sesión
+          <Typography
+            component="h1"
+            variant="h4"
+            sx={{
+              fontWeight: 700,
+              mb: 2,
+              color: '#308be7',
+              letterSpacing: 1.5,
+              textShadow: '0 2px 8px #e0e7ff',
+            }}
+            gutterBottom
+          >
+            Sistema de Encuestas
           </Typography>
-          {error && (
-            <Alert severity="error" sx={{ width: '100%', mt: 2, mb: 2 }}>
-              {error}
-            </Alert>
-          )}
-          <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1, width: '100%' }}>
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              id="email"
-              label="Correo Electrónico"
-              name="email"
-              autoComplete="email"
-              autoFocus
-              value={formData.email}
-              onChange={handleChange}
-              disabled={loading}
-              error={!!error}
-            />
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              name="password"
-              label="Contraseña"
-              type="password"
-              id="password"
-              autoComplete="current-password"
-              value={formData.password}
-              onChange={handleChange}
-              disabled={loading}
-              error={!!error}
-            />
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              sx={{ mt: 3, mb: 2 }}
-              disabled={loading}
-            >
+          <Paper
+            elevation={6}
+            sx={{
+              padding: 4,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              width: '100%',
+              borderRadius: 4,
+              background: 'linear-gradient(135deg, #f0f4ff 0%, #f8fafc 100%)',
+              boxShadow: '0 8px 32px 0 rgba(48,139,231,0.10)',
+            }}
+          >
+            <Typography component="h2" variant="h6" sx={{ mb: 2, color: '#308be7', fontWeight: 600 }}>
               Iniciar Sesión
-            </Button>
-            <Button
-              fullWidth
-              variant="text"
-              onClick={() => navigate('/register')}
-              disabled={loading}
-            >
-              ¿No tienes cuenta? Regístrate
-            </Button>
-          </Box>
-          {loading && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-              <CircularProgress size={32} color="primary" />
+            </Typography>
+            {error && (
+              <Alert severity="error" sx={{ width: '100%', mt: 2, mb: 2 }}>
+                {error}
+              </Alert>
+            )}
+            <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1, width: '100%' }}>
+              <TextField
+                margin="normal"
+                required
+                fullWidth
+                id="email"
+                label="Correo Electrónico"
+                name="email"
+                autoComplete="email"
+                autoFocus
+                value={formData.email}
+                onChange={handleChange}
+                disabled={loading}
+                error={!!error}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <EmailIcon color="primary" />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              <TextField
+                margin="normal"
+                required
+                fullWidth
+                name="password"
+                label="Contraseña"
+                type="password"
+                id="password"
+                autoComplete="current-password"
+                value={formData.password}
+                onChange={handleChange}
+                disabled={loading}
+                error={!!error}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <LockIcon color="primary" />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              <Button
+                type="submit"
+                fullWidth
+                variant="contained"
+                sx={{
+                  mt: 3,
+                  mb: 2,
+                  py: 1.5,
+                  fontWeight: 700,
+                  fontSize: '1.1rem',
+                  background: 'linear-gradient(90deg, #308be7 0%, #67e8f9 100%)',
+                  color: '#fff',
+                  boxShadow: '0 4px 16px 0 rgba(48,139,231,0.15)',
+                  borderRadius: 3,
+                  textTransform: 'none',
+                  '&:hover': {
+                    background: 'linear-gradient(90deg, #2563eb 0%, #38bdf8 100%)',
+                  },
+                }}
+                disabled={loading}
+              >
+                Iniciar Sesión
+              </Button>
             </Box>
-          )}
-        </Paper>
-      </Box>
-    </Container>
+            {loading && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                <CircularProgress size={32} color="primary" />
+              </Box>
+            )}
+          </Paper>
+        </Box>
+      </Container>
+    </Box>
   );
 };
 
