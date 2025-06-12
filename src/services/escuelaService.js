@@ -177,6 +177,61 @@ export const obtenerEncuestas = async () => {
   }
 };
 
+// Obtener preguntas asociadas a una encuesta
+export const obtenerPreguntasPorEncuesta = async (encuestaId) => {
+  try {
+    const encuestaPreguntaRef = collection(db, 'encuesta_pregunta');
+    const q = query(encuestaPreguntaRef, where('encuesta_id', '==', encuestaId));
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+  } catch (error) {
+    throw new Error('Error al obtener preguntas de la encuesta: ' + error.message);
+  }
+};
+
+// Actualizar preguntas asociadas a una encuesta
+export const actualizarPreguntasEncuesta = async (encuestaId, preguntaIds) => {
+  try {
+    const encuestaPreguntaRef = collection(db, 'encuesta_pregunta');
+    // Obtener todas las relaciones actuales para esta encuesta
+    const q = query(encuestaPreguntaRef, where('encuesta_id', '==', encuestaId));
+    const querySnapshot = await getDocs(q);
+    const batch = writeBatch(db);
+    // Crear un mapa de las relaciones actuales
+    const relacionesActuales = new Map();
+    querySnapshot.docs.forEach(doc => {
+      const data = doc.data();
+      relacionesActuales.set(data.pregunta_id, doc.id);
+    });
+    // Eliminar relaciones que ya no existen
+    for (const [preguntaId, docId] of relacionesActuales) {
+      if (!preguntaIds.includes(preguntaId)) {
+        const docRef = doc(encuestaPreguntaRef, docId);
+        batch.delete(docRef);
+      }
+    }
+    // Agregar nuevas relaciones
+    for (const preguntaId of preguntaIds) {
+      if (!relacionesActuales.has(preguntaId)) {
+        const nuevaRelacion = {
+          encuesta_id: encuestaId,
+          pregunta_id: preguntaId,
+          fecha_creacion: new Date(),
+          orden: 1 // Puedes ajustar el orden si lo necesitas
+        };
+        const docRef = doc(collection(db, 'encuesta_pregunta'));
+        batch.set(docRef, nuevaRelacion);
+      }
+    }
+    await batch.commit();
+  } catch (error) {
+    throw new Error('Error al actualizar preguntas de la encuesta: ' + error.message);
+  }
+};
+
 // Funciones para Preguntas
 export const crearPregunta = async (preguntaData) => {
   try {

@@ -22,7 +22,8 @@ import {
 import {
   Add as AddIcon,
   Edit as EditIcon,
-  Delete as DeleteIcon
+  Delete as DeleteIcon,
+  QuestionAnswer as QuestionAnswerIcon
 } from '@mui/icons-material';
 import {
   obtenerEncuestas,
@@ -31,6 +32,7 @@ import {
   eliminarEncuesta
 } from '../../services/encuestaService';
 import { useSnackbar } from '../../contexts/SnackbarContext';
+import EncuestaPreguntasDialog from './EncuestaPreguntasDialog';
 
 const EncuestasList = () => {
   const [encuestas, setEncuestas] = useState([]);
@@ -44,6 +46,8 @@ const EncuestasList = () => {
     estado: 'activa'
   });
   const { mostrarSnackbar } = useSnackbar();
+  const [openPreguntasDialog, setOpenPreguntasDialog] = useState(false);
+  const [encuestaSeleccionada, setEncuestaSeleccionada] = useState(null);
 
   const cargarEncuestas = useCallback(async () => {
     setLoading(true);
@@ -124,6 +128,16 @@ const EncuestasList = () => {
     }
   };
 
+  const handleOpenPreguntasDialog = (encuesta) => {
+    setEncuestaSeleccionada(encuesta);
+    setOpenPreguntasDialog(true);
+  };
+
+  const handleClosePreguntasDialog = () => {
+    setOpenPreguntasDialog(false);
+    setEncuestaSeleccionada(null);
+  };
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
@@ -160,6 +174,7 @@ const EncuestasList = () => {
                 <TableCell sx={{ color: '#fff' }}>Descripción</TableCell>
                 <TableCell sx={{ color: '#fff' }}>Estado</TableCell>
                 <TableCell sx={{ color: '#fff' }}>Acciones</TableCell>
+                <TableCell sx={{ color: '#fff' }}>Preguntas</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -174,6 +189,11 @@ const EncuestasList = () => {
                     </IconButton>
                     <IconButton color="error" onClick={() => handleOpenDeleteDialog(encuesta)}>
                       <DeleteIcon />
+                    </IconButton>
+                  </TableCell>
+                  <TableCell>
+                    <IconButton color="info" onClick={() => handleOpenPreguntasDialog(encuesta)}>
+                      <QuestionAnswerIcon />
                     </IconButton>
                   </TableCell>
                 </TableRow>
@@ -247,6 +267,12 @@ const EncuestasList = () => {
           </DialogActions>
         </Dialog>
       )}
+
+      <EncuestaPreguntasDialog
+        open={openPreguntasDialog}
+        onClose={handleClosePreguntasDialog}
+        encuesta={encuestaSeleccionada}
+      />
     </Box>
   );
 };
