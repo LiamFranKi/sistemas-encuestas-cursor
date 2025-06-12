@@ -22,7 +22,8 @@ import {
 import {
   Add as AddIcon,
   Edit as EditIcon,
-  Delete as DeleteIcon
+  Delete as DeleteIcon,
+  ListAlt as ListAltIcon
 } from '@mui/icons-material';
 import {
   obtenerPreguntas,
@@ -31,6 +32,7 @@ import {
   eliminarPregunta
 } from '../../services/escuelaService';
 import { useSnackbar } from '../../contexts/SnackbarContext';
+import PreguntaAlternativasDialog from './PreguntaAlternativasDialog';
 
 const tiposPregunta = [
   { value: 'multiple', label: 'Múltiple' },
@@ -49,6 +51,8 @@ const PreguntasList = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [selectedPregunta, setSelectedPregunta] = useState(null);
+  const [openAlternativasDialog, setOpenAlternativasDialog] = useState(false);
+  const [preguntaSeleccionada, setPreguntaSeleccionada] = useState(null);
   const [formData, setFormData] = useState({
     texto_pregunta: '',
     tipo_pregunta: 'multiple',
@@ -202,6 +206,9 @@ const PreguntasList = () => {
                     <IconButton color="error" onClick={() => handleOpenDeleteDialog(pregunta)}>
                       <DeleteIcon />
                     </IconButton>
+                    <IconButton color="secondary" onClick={() => { setPreguntaSeleccionada(pregunta); setOpenAlternativasDialog(true); }}>
+                      <ListAltIcon />
+                    </IconButton>
                   </TableCell>
                 </TableRow>
               ))}
@@ -277,6 +284,11 @@ const PreguntasList = () => {
           </Button>
         </DialogActions>
       </Dialog>
+      <PreguntaAlternativasDialog
+        open={openAlternativasDialog}
+        onClose={() => setOpenAlternativasDialog(false)}
+        pregunta={preguntaSeleccionada}
+      />
     </Box>
   );
 };
