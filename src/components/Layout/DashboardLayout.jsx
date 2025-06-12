@@ -23,7 +23,9 @@ import {
   Person as PersonIcon,
   Assignment as AssignmentIcon,
   ExitToApp as ExitToAppIcon,
-  Help as HelpIcon
+  Help as HelpIcon,
+  Group as GroupIcon,
+  BarChart as BarChartIcon
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -77,6 +79,8 @@ const DashboardLayout = ({ children }) => {
     { text: 'Encuestas', icon: <AssignmentIcon sx={{ color: '#8e24aa' }} />, path: '/encuestas' },
     { text: 'Preguntas', icon: <HelpIcon sx={{ color: '#d32f2f' }} />, path: '/preguntas' },
     { text: 'Alternativas', icon: <AssignmentIcon sx={{ color: '#1976d2' }} />, path: '/alternativas' },
+    { text: 'Usuarios', icon: <GroupIcon sx={{ color: '#0288d1' }} />, path: '/usuarios' },
+    { text: 'Estadísticas', icon: <BarChartIcon sx={{ color: '#43a047' }} />, path: '/estadisticas' },
   ];
 
   return (

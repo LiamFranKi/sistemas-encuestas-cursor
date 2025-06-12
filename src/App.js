@@ -14,6 +14,8 @@ import DocentesList from './components/Docentes/DocentesList';
 import EncuestasList from './components/Encuestas/EncuestasList';
 import PreguntasList from './components/Preguntas/PreguntasList';
 import AlternativasList from './components/Alternativas/AlternativasList';
+import UsuariosList from './components/Usuarios/UsuariosList';
+import EstadisticasList from './components/Estadisticas/EstadisticasList';
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -111,6 +113,20 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
+      <Route path="/usuarios" element={
+        <PrivateRoute>
+          <DashboardLayout>
+            <UsuariosList />
+          </DashboardLayout>
+        </PrivateRoute>
+      } />
+      <Route path="/estadisticas" element={
+        <PrivateRoute>
+          <DashboardLayout>
+            <EstadisticasList />
+          </DashboardLayout>
+        </PrivateRoute>
+      } />
     </Routes>
     
   );
