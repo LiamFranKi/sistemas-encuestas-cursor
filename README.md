@@ -1,70 +1,123 @@
-# Getting Started with Create React App
+# Sistema de Encuestas Educativas
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## Descripción General
+Sistema de gestión de encuestas educativas desarrollado con React y Firebase, diseñado para facilitar la evaluación de docentes por parte de los estudiantes. El sistema permite la creación y administración de encuestas personalizadas por grado, con un enfoque en la evaluación docente.
 
-## Available Scripts
+## Tecnologías Principales
+- **Frontend**: React.js
+- **Backend**: Firebase
+  - Authentication
+  - Firestore Database
+  - Analytics
+- **UI Framework**: Material-UI (MUI)
+- **Routing**: React Router
 
-In the project directory, you can run:
+## Estructura del Proyecto
+```
+src/
+├── components/         # Componentes de la aplicación
+│   ├── Auth/          # Componentes de autenticación
+│   ├── Dashboard/     # Panel principal
+│   ├── Docentes/      # Gestión de docentes
+│   ├── Encuestas/     # Gestión de encuestas
+│   ├── Grados/        # Gestión de grados
+│   ├── Layout/        # Componentes de diseño
+│   ├── Preguntas/     # Gestión de preguntas
+│   ├── Alternativas/  # Gestión de alternativas
+│   ├── Usuarios/      # Gestión de usuarios
+│   └── Estadisticas/  # Visualización de estadísticas
+├── config/            # Configuraciones
+├── contexts/          # Contextos de React
+├── services/          # Servicios y lógica de negocio
+└── theme.js           # Configuración de tema MUI
+```
 
-### `npm start`
+## Lógica de Negocio
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+### 1. Gestión de Grados
+- Administración de niveles educativos (ej: Primer Año de Secundaria, Cuarto Grado de Primaria)
+- Cada grado representa un nivel específico en la institución educativa
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+### 2. Gestión de Docentes
+- Registro y administración de maestros
+- Relación con grados (un docente puede enseñar en múltiples grados)
+- Colección en Firestore: `grados-docentes` para manejar la relación
 
-### `npm test`
+### 3. Sistema de Encuestas
+- Creación de encuestas por grado
+- Relación con preguntas predefinidas
+- Colección en Firestore: `encuesta-preguntas`
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### 4. Banco de Preguntas
+- Módulo independiente para almacenar preguntas
+- Reutilización de preguntas en diferentes encuestas
+- Relación con alternativas de respuesta
 
-### `npm run build`
+### 5. Banco de Alternativas
+- Módulo independiente para almacenar opciones de respuesta
+- Relación con preguntas
+- Colección en Firestore: `preguntas-alternativas`
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### 6. Gestión de Usuarios
+- Dos tipos de usuarios:
+  - Admin: Acceso completo al sistema
+  - User: Acceso limitado
+- Autenticación manejada directamente en Firebase
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### 7. Proceso de Encuesta para Estudiantes
+- Ruta pública para estudiantes (sin necesidad de login)
+- Selección de grado
+- Visualización de encuesta:
+  - Una pregunta por pantalla
+  - Lista de docentes del grado en filas
+  - Alternativas de respuesta en columnas
+  - Matriz de evaluación por docente
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### 8. Sistema de Estadísticas
+- Análisis por:
+  - Grado
+  - Docente
+  - Pregunta
+  - Alternativa seleccionada
+- Métricas generales y específicas
+- Visualización de tendencias y resultados
 
-### `npm run eject`
+## Flujo de la Encuesta
+1. Estudiante selecciona su grado
+2. Sistema muestra preguntas una por una
+3. Para cada pregunta:
+   - Lista de docentes en filas
+   - Alternativas de respuesta en columnas
+   - Matriz de evaluación
+4. Almacenamiento de respuestas
+5. Generación de estadísticas
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## Estado Actual
+El sistema está en desarrollo activo con las siguientes características implementadas:
+- Estructura base del proyecto
+- Sistema de autenticación
+- Rutas principales
+- Componentes base para cada módulo
+- Integración con Firebase
+- Relaciones entre colecciones en Firestore
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## Configuración de Firebase
+El proyecto utiliza Firebase con las siguientes configuraciones:
+- Authentication para gestión de usuarios
+- Firestore para almacenamiento de datos
+- Analytics para seguimiento de uso
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## Próximos Pasos
+1. Implementar la interfaz de encuesta para estudiantes
+2. Desarrollar el sistema de matriz de evaluación
+3. Crear el módulo de estadísticas
+4. Implementar la visualización de resultados
+5. Agregar validaciones y manejo de errores
+6. Implementar pruebas automatizadas
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+## Notas de Desarrollo
+- El proyecto sigue una arquitectura modular
+- Se utiliza Context API para el manejo de estado global
+- Se implementan buenas prácticas de React y Firebase
+- Se mantiene una estructura de código limpia y mantenible
+- Las relaciones entre entidades se manejan a través de colecciones en Firestore
