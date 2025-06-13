@@ -3,6 +3,9 @@
 ## [No Versionado]
 
 ### 2024-03-19
+- **feat**: Commit inicial del sistema completo de encuestas
+  - Primer commit que incluye toda la estructura y archivos del sistema de encuestas educativo
+
 - **docs**: Actualización completa del README con la lógica de negocio detallada del sistema de encuestas
   - Detalle de la estructura del proyecto
   - Descripción de la lógica de negocio
