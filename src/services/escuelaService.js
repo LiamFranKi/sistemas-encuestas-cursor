@@ -367,26 +367,29 @@ export const obtenerDocentesPorGrado = async (gradoId) => {
   try {
     console.log('Obteniendo docentes para el grado:', gradoId);
     const docentesRef = collection(db, 'grados_docentes');
-    const q = query(
-      docentesRef,
-      where('gradoId', '==', gradoId),
-      where('activo', '==', true)
-    );
+    const q = query(docentesRef, where('gradoId', '==', gradoId));
     const querySnapshot = await getDocs(q);
-    
-    // Obtener los IDs de los docentes asignados
+
     const docentesIds = querySnapshot.docs.map(doc => doc.data().docenteId);
     console.log('IDs de docentes encontrados:', docentesIds);
-    
-    // Obtener los detalles de los docentes
+
+    if (docentesIds.length === 0) return [];
+
+    // Firestore permite hasta 30 elementos en un 'in'
     const docentes = [];
-    for (const docenteId of docentesIds) {
-      const docenteDoc = await getDoc(doc(db, 'docentes', docenteId));
-      if (docenteDoc.exists()) {
-        docentes.push({ id: docenteDoc.id, ...docenteDoc.data() });
-      }
+    for (let i = 0; i < docentesIds.length; i += 30) {
+      const batchIds = docentesIds.slice(i, i + 30);
+      const docentesQuery = query(
+        collection(db, 'docentes'),
+        where('__name__', 'in', batchIds)
+      );
+      const docentesSnapshot = await getDocs(docentesQuery);
+      docentes.push(...docentesSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })));
     }
-    
+
     console.log('Docentes encontrados:', docentes);
     return docentes;
   } catch (error) {
