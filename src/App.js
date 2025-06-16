@@ -17,6 +17,7 @@ import AlternativasList from './components/Alternativas/AlternativasList';
 import UsuariosList from './components/Usuarios/UsuariosList';
 import EstadisticasList from './components/Estadisticas/EstadisticasList';
 import LandingPage from './pages/LandingPage';
+import DocentesPorGradoPage from './pages/DocentesPorGradoPage';
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -133,6 +134,7 @@ const AppRoutes = () => {
           </DashboardLayout>
         </PrivateRoute>
       } />
+      <Route path="/docentes-por-grado" element={<DocentesPorGradoPage />} />
     </Routes>
     
   );

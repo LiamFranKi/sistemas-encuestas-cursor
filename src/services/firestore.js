@@ -19,7 +19,7 @@ const COLECCIONES = {
   ENCUESTAS: 'encuestas',
   PREGUNTAS: 'preguntas',
   ALTERNATIVAS: 'alternativas',
-  GRADOS_DOCENTES: 'grados-docentes',
+  GRADOS_DOCENTES: 'grados_docentes',
   ENCUESTA_PREGUNTA: 'encuesta_pregunta',
   PREGUNTA_ALTERNATIVA: 'pregunta_alternativa',
   RESPUESTAS: 'respuestas',
@@ -42,8 +42,8 @@ export const getDocentesByGrado = async (gradoId) => {
   const q = query(gradosDocentesRef, where('gradoId', '==', gradoId));
   const snapshot = await getDocs(q);
   
-  const docentesPromises = snapshot.docs.map(async (doc) => {
-    const docenteRef = doc.data().docenteId;
+  const docentesPromises = snapshot.docs.map(async (docSnap) => {
+    const docenteRef = docSnap.data().docenteId;
     const docenteDoc = await getDoc(doc(db, COLECCIONES.DOCENTES, docenteRef));
     return {
       id: docenteDoc.id,
