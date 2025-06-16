@@ -16,6 +16,8 @@ import PreguntasList from './components/Preguntas/PreguntasList';
 import AlternativasList from './components/Alternativas/AlternativasList';
 import UsuariosList from './components/Usuarios/UsuariosList';
 import EstadisticasList from './components/Estadisticas/EstadisticasList';
+import LandingPage from './pages/LandingPage';
+import EncuestaActivaPage from './pages/EncuestaActivaPage';
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -46,6 +48,7 @@ const PublicRoute = ({ children }) => {
 };
 
 const AppRoutes = () => {
+  const { user, loading } = useAuth();
   return (
     <Routes>
       <Route path="/login" element={
@@ -59,11 +62,15 @@ const AppRoutes = () => {
         </PublicRoute>
       } />
       <Route path="/" element={
-        <PrivateRoute>
-          <DashboardLayout>
-            <Dashboard />
-          </DashboardLayout>
-        </PrivateRoute>
+        user ? (
+          <PrivateRoute>
+            <DashboardLayout>
+              <Dashboard />
+            </DashboardLayout>
+          </PrivateRoute>
+        ) : (
+          <LandingPage />
+        )
       } />
       <Route path="/dashboard" element={
         <PrivateRoute>
@@ -127,6 +134,7 @@ const AppRoutes = () => {
           </DashboardLayout>
         </PrivateRoute>
       } />
+      <Route path="/encuesta-activa" element={<EncuestaActivaPage />} />
     </Routes>
     
   );
