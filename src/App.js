@@ -17,7 +17,6 @@ import AlternativasList from './components/Alternativas/AlternativasList';
 import UsuariosList from './components/Usuarios/UsuariosList';
 import EstadisticasList from './components/Estadisticas/EstadisticasList';
 import LandingPage from './pages/LandingPage';
-import EncuestaActivaPage from './pages/EncuestaActivaPage';
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -134,7 +133,6 @@ const AppRoutes = () => {
           </DashboardLayout>
         </PrivateRoute>
       } />
-      <Route path="/encuesta-activa" element={<EncuestaActivaPage />} />
     </Routes>
     
   );

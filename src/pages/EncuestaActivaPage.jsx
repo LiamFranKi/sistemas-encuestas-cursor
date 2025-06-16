@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Button, Typography, Paper, CircularProgress, Alert } from '@mui/material';
 import { getEncuestaActiva } from '../services/firestore';
+import { useNavigate } from 'react-router-dom';
 
 const logoUrl = '/assets/vanguard-logo.png';
 
@@ -8,6 +9,7 @@ const EncuestaActivaPage = () => {
   const [encuesta, setEncuesta] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchEncuesta = async () => {
@@ -71,8 +73,7 @@ const EncuestaActivaPage = () => {
                     transform: 'scale(1.04)',
                   },
                 }}
-                // TODO: Navegar a la encuesta real
-                href="#"
+                onClick={() => navigate('/seleccionar-grado', { state: { encuestaId: encuesta.id } })}
               >
                 Empezar
               </Button>
