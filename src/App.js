@@ -21,9 +21,9 @@ import DocentesPorGradoPage from './pages/DocentesPorGradoPage';
 import EncuestaGraciasPage from './pages/EncuestaGraciasPage';
 
 const PrivateRoute = ({ children }) => {
-  const { user, loading } = useAuth();
+  const { user } = useAuth();
 
-  if (loading) {
+  if (user === null) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
         <CircularProgress />

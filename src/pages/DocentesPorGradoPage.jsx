@@ -91,10 +91,6 @@ const DocentesPorGradoPage = () => {
     setShowWarning(false);
   }, [preguntaActual]);
 
-  const handleAnterior = () => {
-    setPreguntaActual((prev) => Math.max(prev - 1, 0));
-  };
-
   // Validar si todos los docentes tienen respuesta para la pregunta actual
   const todosRespondidos = docentes.length > 0 && docentes.every(docente => respuestas[docente.id]);
 
