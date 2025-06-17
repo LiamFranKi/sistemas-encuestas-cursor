@@ -18,6 +18,7 @@ import UsuariosList from './components/Usuarios/UsuariosList';
 import EstadisticasList from './components/Estadisticas/EstadisticasList';
 import LandingPage from './pages/LandingPage';
 import DocentesPorGradoPage from './pages/DocentesPorGradoPage';
+import EncuestaGraciasPage from './pages/EncuestaGraciasPage';
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -135,6 +136,7 @@ const AppRoutes = () => {
         </PrivateRoute>
       } />
       <Route path="/docentes-por-grado" element={<DocentesPorGradoPage />} />
+      <Route path="/encuesta-gracias" element={<EncuestaGraciasPage />} />
     </Routes>
     
   );

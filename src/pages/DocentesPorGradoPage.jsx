@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, CircularProgress, Alert, List, ListItem, ListItemText, Button, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Radio, Paper } from '@mui/material';
+import { Box, Typography, CircularProgress, Alert, List, ListItem, ListItemText, Button, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Radio, Paper, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { getDocentesByGrado, getGrados, getPreguntasByEncuesta, getAlternativasByPregunta } from '../services/firestore';
 import { db } from '../config/firebase';
-import { doc, getDoc as getDocFirestore } from 'firebase/firestore';
+import { doc, getDoc as getDocFirestore, collection, addDoc, writeBatch } from 'firebase/firestore';
 
 const logoUrl = '/assets/vanguard-logo.png';
 
@@ -20,6 +20,10 @@ const DocentesPorGradoPage = () => {
   const [alternativas, setAlternativas] = useState([]);
   const [respuestas, setRespuestas] = useState({});
   const [showWarning, setShowWarning] = useState(false);
+  const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
+  const [pendingAction, setPendingAction] = useState(null); // 'next' o 'finish'
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState(null);
 
   // Recibe los ids desde location.state
   const encuestaId = location.state?.encuestaId;
@@ -99,8 +103,8 @@ const DocentesPorGradoPage = () => {
       setShowWarning(true);
       return;
     }
-    setShowWarning(false);
-    setPreguntaActual((prev) => Math.min(prev + 1, preguntas.length - 1));
+    setPendingAction('next');
+    setOpenConfirmDialog(true);
   };
 
   const handleFinalizar = () => {
@@ -108,9 +112,74 @@ const DocentesPorGradoPage = () => {
       setShowWarning(true);
       return;
     }
-    setShowWarning(false);
-    // Aquí puedes navegar a una página de agradecimiento o resumen
-    navigate('/');
+    setPendingAction('finish');
+    setOpenConfirmDialog(true);
+  };
+
+  // Función para guardar las respuestas en Firestore
+  const guardarRespuestas = async () => {
+    if (!todosRespondidos) return false;
+
+    try {
+      setSaving(true);
+      setSaveError(null);
+
+      // Crear un batch para guardar todas las respuestas de una vez
+      const batch = writeBatch(db);
+      const respuestasRef = collection(db, 'respuestas');
+      const timestamp = new Date();
+
+      // Para cada docente, crear un documento de respuesta
+      for (const [docenteId, alternativaId] of Object.entries(respuestas)) {
+        const nuevaRespuesta = {
+          encuesta_id: encuestaId,
+          grado_id: gradoId,
+          pregunta_id: preguntas[preguntaActual].id,
+          docente_id: docenteId,
+          alternativa_id: alternativaId,
+          timestamp: timestamp
+        };
+
+        // Agregar la operación al batch
+        const docRef = doc(respuestasRef);
+        batch.set(docRef, nuevaRespuesta);
+      }
+
+      // Ejecutar el batch
+      await batch.commit();
+      return true;
+    } catch (error) {
+      console.error('Error al guardar respuestas:', error);
+      setSaveError('Error al guardar las respuestas. Por favor, intente nuevamente.');
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleConfirmAction = async () => {
+    setOpenConfirmDialog(false);
+    
+    // Guardar las respuestas actuales
+    const guardadoExitoso = await guardarRespuestas();
+    
+    if (!guardadoExitoso) {
+      // Si hubo error al guardar, mostrar el error y no avanzar
+      return;
+    }
+
+    if (pendingAction === 'next') {
+      setPreguntaActual((prev) => Math.min(prev + 1, preguntas.length - 1));
+      setRespuestas({}); // Limpiar respuestas para la siguiente pregunta
+    } else if (pendingAction === 'finish') {
+      navigate('/encuesta-gracias');
+    }
+    setPendingAction(null);
+  };
+
+  const handleCancelAction = () => {
+    setOpenConfirmDialog(false);
+    setPendingAction(null);
   };
 
   // Manejar selección de alternativa para cada docente
@@ -265,6 +334,45 @@ const DocentesPorGradoPage = () => {
           )}
         </Box>
       )}
+
+      {/* Mostrar error de guardado si existe */}
+      {saveError && (
+        <Alert severity="error" sx={{ mt: 2, width: '100%', maxWidth: 600 }}>
+          {saveError}
+        </Alert>
+      )}
+
+      {/* Diálogo de confirmación */}
+      <Dialog
+        open={openConfirmDialog}
+        onClose={handleCancelAction}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          Confirmar {pendingAction === 'next' ? 'avance' : 'finalización'}
+        </DialogTitle>
+        <DialogContent>
+          <Typography>
+            {pendingAction === 'next' 
+              ? '¿Estás seguro de que deseas avanzar a la siguiente pregunta? Tus respuestas se guardarán.'
+              : '¿Estás seguro de que deseas finalizar la encuesta? Tus respuestas se guardarán.'}
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancelAction} color="primary" disabled={saving}>
+            Cancelar
+          </Button>
+          <Button 
+            onClick={handleConfirmAction} 
+            color="primary" 
+            variant="contained"
+            disabled={saving}
+          >
+            {saving ? 'Guardando...' : 'Confirmar'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
