@@ -150,26 +150,6 @@ const DocentesPorGradoPage = () => {
               </Typography>
             )}
           </Box>
-          {/* Navegación de preguntas (arriba) */}
-          {preguntas.length > 0 && (
-            <Stack direction="row" spacing={2} justifyContent="center" sx={{ mb: 2 }}>
-              <Button
-                variant="outlined"
-                onClick={handleAnterior}
-                disabled={preguntaActual === 0}
-              >
-                Anterior
-              </Button>
-              <Button
-                variant={preguntaActual === preguntas.length - 1 ? 'contained' : 'contained'}
-                color={preguntaActual === preguntas.length - 1 ? 'success' : 'primary'}
-                onClick={preguntaActual === preguntas.length - 1 ? handleFinalizar : handleSiguiente}
-                disabled={!todosRespondidos}
-              >
-                {botonSiguienteTexto}
-              </Button>
-            </Stack>
-          )}
           {showWarning && (
             <Alert severity="warning" sx={{ mb: 2 }}>
               Debes responder para todos los docentes antes de continuar.
@@ -186,11 +166,32 @@ const DocentesPorGradoPage = () => {
           )}
           {/* Tabla de docentes y alternativas */}
           {docentes.length > 0 && alternativasOrdenadas.length > 0 && (
-            <TableContainer component={Paper} sx={{ mb: 4 }}>
-              <Table>
+            <TableContainer
+              component={Paper}
+              sx={{
+                mb: 4,
+                maxHeight: 420,
+                // Estilos personalizados para el scroll
+                '&::-webkit-scrollbar': {
+                  width: '8px',
+                  height: '8px',
+                },
+                '&::-webkit-scrollbar-thumb': {
+                  background: '#1976d2',
+                  borderRadius: '8px',
+                },
+                '&::-webkit-scrollbar-track': {
+                  background: '#e3f2fd',
+                  borderRadius: '8px',
+                },
+                scrollbarWidth: 'thin', // Firefox
+                scrollbarColor: '#1976d2 #e3f2fd', // Firefox
+              }}
+            >
+              <Table stickyHeader>
                 <TableHead>
                   <TableRow>
-                    <TableCell sx={{ background: '#1976d2', color: '#fff', fontWeight: 700, fontSize: '1.1rem' }}>Docente</TableCell>
+                    <TableCell sx={{ background: '#1976d2', color: '#fff', fontWeight: 700, fontSize: '1.1rem', position: 'sticky', top: 0, zIndex: 1 }}>Docente</TableCell>
                     {alternativasOrdenadas.map((alt, idx) => (
                       <TableCell
                         key={alt.id}
@@ -200,6 +201,9 @@ const DocentesPorGradoPage = () => {
                           color: '#1976d2',
                           fontWeight: 600,
                           fontSize: '1.05rem',
+                          position: 'sticky',
+                          top: 0,
+                          zIndex: 1,
                         }}
                       >
                         {alt.texto_alternativa}
@@ -245,19 +249,12 @@ const DocentesPorGradoPage = () => {
           {preguntas.length > 0 && (
             <Stack direction="row" spacing={2} justifyContent="center" sx={{ mt: 4 }}>
               <Button
-                variant="outlined"
-                onClick={handleAnterior}
-                disabled={preguntaActual === 0}
-              >
-                Anterior
-              </Button>
-              <Button
                 variant={preguntaActual === preguntas.length - 1 ? 'contained' : 'contained'}
                 color={preguntaActual === preguntas.length - 1 ? 'success' : 'primary'}
                 onClick={preguntaActual === preguntas.length - 1 ? handleFinalizar : handleSiguiente}
                 disabled={!todosRespondidos}
               >
-                {botonSiguienteTexto}
+                {preguntaActual === preguntas.length - 1 ? 'Finalizar encuesta' : 'Siguiente'}
               </Button>
             </Stack>
           )}
