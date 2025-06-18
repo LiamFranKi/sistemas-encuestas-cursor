@@ -36,6 +36,8 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pi
 import { BarChart as ReBarChart, Bar as ReBar, XAxis as ReXAxis, YAxis as ReYAxis, Tooltip as ReTooltip, ResponsiveContainer as ReResponsiveContainer, Legend as ReLegend, Cell as ReCell } from 'recharts';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../config/firebase';
+import { getDocentesByGrado } from '../../services/firestore';
+import { useTheme } from '@mui/material/styles';
 
 const COLORS = ['#308be7', '#43a047', '#fbc02d', '#8e24aa'];
 
@@ -598,12 +600,138 @@ const EstadisticasList = () => {
                         </ReBarChart>
                       </ReResponsiveContainer>
                     </Box>
+
+                    {/* --- NUEVA SECCIÓN: TABLA CRUZADA Y GRÁFICO APILADO --- */}
+                    <CruzadaPreguntaDocenteAlternativa
+                      gradoId={gradoSeleccionado.id}
+                      pregunta={pregunta}
+                      alternativas={alternativasPorPregunta[pregunta.id] || []}
+                    />
                   </Box>
                 ))}
               </Box>
             )}
           </>
         )}
+      </Box>
+    </Box>
+  );
+};
+
+// Componente auxiliar para la tabla cruzada y gráfico apilado
+const CruzadaPreguntaDocenteAlternativa = ({ gradoId, pregunta, alternativas }) => {
+  const [docentes, setDocentes] = React.useState([]);
+  const [conteo, setConteo] = React.useState({}); // {docenteId: {alternativaId: cantidad}}
+  const [loading, setLoading] = React.useState(true);
+  const theme = useTheme();
+
+  React.useEffect(() => {
+    let mounted = true;
+    const fetchData = async () => {
+      setLoading(true);
+      // 1. Obtener docentes del grado
+      const docentesList = await getDocentesByGrado(gradoId);
+      // Ordenar docentes por nombre
+      const docentesOrdenados = docentesList.sort((a, b) => a.nombre.localeCompare(b.nombre));
+      // 2. Inicializar estructura
+      const conteoTemp = {};
+      for (const docente of docentesOrdenados) {
+        conteoTemp[docente.id] = {};
+        for (const alt of alternativas) {
+          conteoTemp[docente.id][alt.id] = 0;
+        }
+      }
+      // 3. Obtener respuestas de este grado y pregunta
+      const respuestasQuery = query(
+        collection(db, 'respuestas'),
+        where('grado_id', '==', gradoId),
+        where('pregunta_id', '==', pregunta.id)
+      );
+      const respuestasSnap = await getDocs(respuestasQuery);
+      respuestasSnap.forEach(doc => {
+        const data = doc.data();
+        const docenteId = data.docente_id;
+        const alternativaId = data.alternativa_id;
+        if (conteoTemp[docenteId] && conteoTemp[docenteId][alternativaId] !== undefined) {
+          conteoTemp[docenteId][alternativaId]++;
+        }
+      });
+      if (mounted) {
+        setDocentes(docentesOrdenados);
+        setConteo(conteoTemp);
+        setLoading(false);
+      }
+    };
+    fetchData();
+    return () => { mounted = false; };
+  }, [gradoId, pregunta.id, alternativas]);
+
+  if (loading) return <Box sx={{ my: 2, textAlign: 'center' }}><CircularProgress size={24} /></Box>;
+  if (!docentes.length || !alternativas.length) return null;
+
+  // Ordenar alternativas por id
+  const alternativasOrdenadas = [...alternativas].sort((a, b) => a.id.localeCompare(b.id));
+
+  // Preparar datos para gráfico apilado
+  const chartData = docentes.map(docente => {
+    const row = { docente: docente.nombre };
+    alternativasOrdenadas.forEach(alt => {
+      row[alt.texto] = conteo[docente.id][alt.id] || 0;
+    });
+    return row;
+  });
+
+  return (
+    <Box sx={{ mt: 4 }}>
+      <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 600 }}>
+        Estadística cruzada: Docente x Alternativa (Pregunta actual)
+      </Typography>
+      <TableContainer component={Paper} sx={{ mb: 2, maxWidth: 900 }}>
+        <Table size="small">
+          <TableHead>
+            <TableRow>
+              <TableCell align="center" sx={{ fontWeight: 'bold', background: theme.palette.grey[200] }}>Docente</TableCell>
+              {alternativasOrdenadas.map((alt) => (
+                <TableCell key={alt.id} align="center" sx={{ fontWeight: 'bold', background: theme.palette.grey[100] }}>{alt.texto}</TableCell>
+              ))}
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {docentes.map((docente) => (
+              <TableRow key={docente.id}>
+                <TableCell align="center" sx={{ fontWeight: 600 }}>{docente.nombre}</TableCell>
+                {alternativasOrdenadas.map((alt) => (
+                  <TableCell key={alt.id} align="center">{conteo[docente.id][alt.id]}</TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+      {/* Gráfico de barras apiladas */}
+      <Box sx={{ width: '100%', maxWidth: 900, height: 320, mx: 'auto' }}>
+        <ReResponsiveContainer width="100%" height={260}>
+          <ReBarChart
+            data={chartData}
+            layout="vertical"
+            margin={{ left: 40, right: 40 }}
+          >
+            <ReXAxis type="number" allowDecimals={false} />
+            <ReYAxis type="category" dataKey="docente" width={180} />
+            <ReTooltip />
+            <ReLegend />
+            {alternativasOrdenadas.map((alt, i) => (
+              <ReBar
+                key={alt.id}
+                dataKey={alt.texto}
+                stackId="a"
+                fill={COLORS[i % COLORS.length]}
+                name={alt.texto}
+                isAnimationActive={false}
+              />
+            ))}
+          </ReBarChart>
+        </ReResponsiveContainer>
       </Box>
     </Box>
   );
