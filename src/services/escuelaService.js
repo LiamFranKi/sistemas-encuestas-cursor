@@ -9,7 +9,6 @@ import {
   where, 
   orderBy,
   limit,
-  getDoc,
   writeBatch,
   serverTimestamp
 } from 'firebase/firestore';

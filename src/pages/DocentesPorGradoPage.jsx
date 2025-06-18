@@ -3,7 +3,7 @@ import { Box, Typography, CircularProgress, Alert, List, ListItem, ListItemText,
 import { useLocation, useNavigate } from 'react-router-dom';
 import { getDocentesByGrado, getGrados, getPreguntasByEncuesta, getAlternativasByPregunta } from '../services/firestore';
 import { db } from '../config/firebase';
-import { doc, getDoc as getDocFirestore, collection, addDoc, writeBatch } from 'firebase/firestore';
+import { doc, getDoc as getDocFirestore, collection, writeBatch } from 'firebase/firestore';
 
 const logoUrl = '/assets/vanguard-logo.png';
 
@@ -28,9 +28,6 @@ const DocentesPorGradoPage = () => {
   // Recibe los ids desde location.state
   const encuestaId = location.state?.encuestaId;
   const gradoId = location.state?.gradoId;
-
-  // Variable auxiliar para el texto del botón siguiente/finalizar
-  const botonSiguienteTexto = (preguntaActual === preguntas.length - 1) ? 'Finalizar encuesta' : 'Siguiente';
 
   useEffect(() => {
     const fetchData = async () => {

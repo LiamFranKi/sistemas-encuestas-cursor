@@ -3,8 +3,7 @@ import {
   Box,
   Grid,
   Typography,
-  CircularProgress,
-  Card
+  CircularProgress
 } from '@mui/material';
 import {
   People as PeopleIcon,

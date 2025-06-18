@@ -35,15 +35,7 @@ const PrivateRoute = ({ children }) => {
 };
 
 const PublicRoute = ({ children }) => {
-  const { user, loading } = useAuth();
-
-  if (loading) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-        <CircularProgress />
-      </div>
-    );
-  }
+  const { user } = useAuth();
 
   return !user ? children : <Navigate to="/dashboard" />;
 };
