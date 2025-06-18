@@ -33,6 +33,9 @@ import {
 } from '../../services/estadisticasService';
 import { useSnackbar } from '../../contexts/SnackbarContext';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+import { BarChart as ReBarChart, Bar as ReBar, XAxis as ReXAxis, YAxis as ReYAxis, Tooltip as ReTooltip, ResponsiveContainer as ReResponsiveContainer, Legend as ReLegend, Cell as ReCell } from 'recharts';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '../../config/firebase';
 
 const COLORS = ['#308be7', '#43a047', '#fbc02d', '#8e24aa'];
 
@@ -67,6 +70,9 @@ const EstadisticasList = () => {
   const [kpisEncuesta, setKpisEncuesta] = useState(null);
   const [gradoSeleccionado, setGradoSeleccionado] = useState(null);
   const [kpisGrado, setKpisGrado] = useState(null);
+  const [preguntasPorGrado, setPreguntasPorGrado] = useState([]);
+  const [alternativasPorPregunta, setAlternativasPorPregunta] = useState({});
+  const [respuestasPorAlternativa, setRespuestasPorAlternativa] = useState({});
 
   const cargarEstadisticas = useCallback(async () => {
     try {
@@ -129,6 +135,75 @@ const EstadisticasList = () => {
     };
     fetchKPIs();
   }, [gradoSeleccionado, estadisticas.generales]);
+
+  // Obtener preguntas, alternativas y respuestas por alternativa para el grado seleccionado
+  useEffect(() => {
+    const fetchEstadisticaPorPregunta = async () => {
+      if (!gradoSeleccionado) {
+        setPreguntasPorGrado([]);
+        setAlternativasPorPregunta({});
+        setRespuestasPorAlternativa({});
+        return;
+      }
+      // Encuesta activa
+      const encuestasQuery = query(collection(db, 'encuestas'), where('estado', '==', 'activa'));
+      const encuestasSnapshot = await getDocs(encuestasQuery);
+      if (encuestasSnapshot.empty) return;
+      const encuestaId = encuestasSnapshot.docs[0].id;
+      // Preguntas de la encuesta
+      const preguntasQuery = query(collection(db, 'encuesta_pregunta'), where('encuesta_id', '==', encuestaId));
+      const preguntasSnapshot = await getDocs(preguntasQuery);
+      const preguntasIds = preguntasSnapshot.docs.map(doc => doc.data().pregunta_id);
+      // Obtener textos de las preguntas
+      const preguntasTextos = [];
+      for (const preguntaId of preguntasIds) {
+        const preguntaDoc = await getDocs(query(collection(db, 'preguntas'), where('__name__', '==', preguntaId)));
+        if (!preguntaDoc.empty) {
+          preguntasTextos.push({ id: preguntaId, texto: preguntaDoc.docs[0].data().texto_pregunta });
+        }
+      }
+      setPreguntasPorGrado(preguntasTextos);
+      // Alternativas por pregunta
+      const alternativasPorPreguntaTemp = {};
+      for (const preguntaId of preguntasIds) {
+        const alternativasSnapshot = await getDocs(query(collection(db, 'pregunta_alternativa'), where('pregunta_id', '==', preguntaId)));
+        alternativasPorPreguntaTemp[preguntaId] = await Promise.all(alternativasSnapshot.docs.map(async doc => {
+          const altId = doc.data().alternativa_id;
+          let texto = doc.data().texto_alternativa;
+          if (!texto) {
+            // Buscar en la colección alternativas si no está el texto
+            const altDocSnap = await getDocs(query(collection(db, 'alternativas'), where('__name__', '==', altId)));
+            if (!altDocSnap.empty) {
+              texto = altDocSnap.docs[0].data().texto_alternativa || altId;
+            } else {
+              texto = altId;
+            }
+          }
+          return {
+            id: altId,
+            texto
+          };
+        }));
+      }
+      setAlternativasPorPregunta(alternativasPorPreguntaTemp);
+      // Respuestas por alternativa
+      const respuestasPorAlternativaTemp = {};
+      for (const preguntaId of preguntasIds) {
+        respuestasPorAlternativaTemp[preguntaId] = {};
+        for (const alternativa of alternativasPorPreguntaTemp[preguntaId] || []) {
+          const respuestasSnapshot = await getDocs(query(
+            collection(db, 'respuestas'),
+            where('grado_id', '==', gradoSeleccionado.id),
+            where('pregunta_id', '==', preguntaId),
+            where('alternativa_id', '==', alternativa.id)
+          ));
+          respuestasPorAlternativaTemp[preguntaId][alternativa.id] = respuestasSnapshot.size;
+        }
+      }
+      setRespuestasPorAlternativa(respuestasPorAlternativaTemp);
+    };
+    fetchEstadisticaPorPregunta();
+  }, [gradoSeleccionado]);
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
@@ -470,6 +545,61 @@ const EstadisticasList = () => {
                     </Paper>
                   </Grid>
                 </Grid>
+              </Box>
+            )}
+            {/* Estadística por pregunta y alternativa para el grado seleccionado */}
+            {gradoSeleccionado && preguntasPorGrado.length > 0 && (
+              <Box sx={{ mt: 6 }}>
+                <Typography variant="h5" sx={{ mb: 3, fontWeight: 'bold' }}>
+                  Estadística por pregunta (solo para el grado seleccionado)
+                </Typography>
+                {preguntasPorGrado.map((pregunta, idx) => (
+                  <Box key={pregunta.id} sx={{ mb: 5, p: 2, border: '1px solid #e0e0e0', borderRadius: 2, background: '#fafbfc' }}>
+                    <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>{`Pregunta ${idx + 1}: ${pregunta.texto}`}</Typography>
+                    {/* Tabla de alternativas */}
+                    <TableContainer component={Paper} sx={{ mb: 2, maxWidth: 600 }}>
+                      <Table size="small">
+                        <TableHead>
+                          <TableRow>
+                            <TableCell align="center" sx={{ fontWeight: 'bold' }}>Alternativa</TableCell>
+                            <TableCell align="center" sx={{ fontWeight: 'bold' }}>Cantidad de respuestas</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {(alternativasPorPregunta[pregunta.id] || []).map((alt) => (
+                            <TableRow key={alt.id}>
+                              <TableCell align="center">{alt.texto}</TableCell>
+                              <TableCell align="center">{respuestasPorAlternativa[pregunta.id]?.[alt.id] || 0}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                    {/* Gráfico de barras */}
+                    <Box sx={{ width: '100%', maxWidth: 600, height: 300, mx: 'auto' }}>
+                      <ReResponsiveContainer width="100%" height={250}>
+                        <ReBarChart
+                          data={(alternativasPorPregunta[pregunta.id] || []).map(alt => ({
+                            name: alt.texto,
+                            value: respuestasPorAlternativa[pregunta.id]?.[alt.id] || 0
+                          }))}
+                          layout="vertical"
+                          margin={{ left: 40, right: 40 }}
+                        >
+                          <ReXAxis type="number" allowDecimals={false} />
+                          <ReYAxis type="category" dataKey="name" width={180} />
+                          <ReTooltip />
+                          <ReLegend />
+                          <ReBar dataKey="value" fill="#308be7">
+                            {(alternativasPorPregunta[pregunta.id] || []).map((alt, i) => (
+                              <ReCell key={alt.id} fill={COLORS[i % COLORS.length]} />
+                            ))}
+                          </ReBar>
+                        </ReBarChart>
+                      </ReResponsiveContainer>
+                    </Box>
+                  </Box>
+                ))}
               </Box>
             )}
           </>
