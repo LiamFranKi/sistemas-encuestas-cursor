@@ -267,4 +267,149 @@ export const obtenerDocentesPorGrado = async (gradoId) => {
     console.error('Error al obtener docentes por grado:', error);
     return 0;
   }
+};
+
+// Obtener estadísticas por docente
+export const obtenerEstadisticasPorDocente = async () => {
+  try {
+    // Obtener todos los docentes
+    const docentesSnapshot = await getDocs(collection(db, 'docentes'));
+    
+    // Obtener encuesta activa
+    const encuestasQuery = query(collection(db, 'encuestas'), where('estado', '==', 'activa'));
+    const encuestasSnapshot = await getDocs(encuestasQuery);
+    
+    if (encuestasSnapshot.empty) {
+      return [];
+    }
+    
+    const encuestaId = encuestasSnapshot.docs[0].id;
+    
+    // Obtener preguntas de la encuesta activa
+    const preguntasQuery = query(
+      collection(db, 'encuesta_pregunta'),
+      where('encuesta_id', '==', encuestaId)
+    );
+    const preguntasSnapshot = await getDocs(preguntasQuery);
+    const preguntasIds = preguntasSnapshot.docs.map(doc => doc.data().pregunta_id);
+    
+    // Obtener textos de las preguntas y sus tipos
+    const preguntasInfo = {};
+    for (const preguntaId of preguntasIds) {
+      const preguntaDoc = await getDocs(query(collection(db, 'preguntas'), where('__name__', '==', preguntaId)));
+      if (!preguntaDoc.empty) {
+        const preguntaData = preguntaDoc.docs[0].data();
+        preguntasInfo[preguntaId] = {
+          texto: preguntaData.texto_pregunta,
+          tipo: preguntaData.tipo_pregunta || 'general'
+        };
+      }
+    }
+    
+    const estadisticas = await Promise.all(
+      docentesSnapshot.docs.map(async (docenteDoc) => {
+        const docente = docenteDoc.data();
+        
+        // Obtener respuestas de este docente
+        const respuestasQuery = query(
+          collection(db, 'respuestas'),
+          where('docente_id', '==', docenteDoc.id)
+        );
+        const respuestasSnapshot = await getDocs(respuestasQuery);
+        
+        const totalRespuestas = respuestasSnapshot.size;
+        const totalPreguntas = preguntasIds.length;
+        
+        // Calcular estadísticas por tipo de pregunta
+        const estadisticasPorTipo = {};
+        const alternativasPorPregunta = {};
+        
+        // Inicializar contadores por tipo
+        Object.values(preguntasInfo).forEach(pregunta => {
+          const tipo = pregunta.tipo;
+          if (!estadisticasPorTipo[tipo]) {
+            estadisticasPorTipo[tipo] = {
+              totalPreguntas: 0,
+              totalRespuestas: 0,
+              preguntas: []
+            };
+          }
+          estadisticasPorTipo[tipo].totalPreguntas++;
+        });
+        
+        // Procesar respuestas
+        respuestasSnapshot.docs.forEach(respDoc => {
+          const resp = respDoc.data();
+          const preguntaId = resp.pregunta_id;
+          const alternativaId = resp.alternativa_id;
+          
+          if (preguntasInfo[preguntaId]) {
+            const tipo = preguntasInfo[preguntaId].tipo;
+            estadisticasPorTipo[tipo].totalRespuestas++;
+            
+            if (!estadisticasPorTipo[tipo].preguntas.includes(preguntaId)) {
+              estadisticasPorTipo[tipo].preguntas.push(preguntaId);
+            }
+          }
+          
+          // Contar alternativas por pregunta
+          if (!alternativasPorPregunta[preguntaId]) {
+            alternativasPorPregunta[preguntaId] = {};
+          }
+          if (!alternativasPorPregunta[preguntaId][alternativaId]) {
+            alternativasPorPregunta[preguntaId][alternativaId] = 0;
+          }
+          alternativasPorPregunta[preguntaId][alternativaId]++;
+        });
+        
+        // Obtener textos de las alternativas más seleccionadas
+        const alternativasMasSeleccionadas = {};
+        for (const [preguntaId, alternativas] of Object.entries(alternativasPorPregunta)) {
+          const alternativaMasVotada = Object.entries(alternativas).reduce((a, b) => 
+            alternativas[a[0]] > alternativas[b[0]] ? a : b
+          );
+          
+          // Obtener texto de la alternativa
+          const alternativaDoc = await getDocs(query(
+            collection(db, 'pregunta_alternativa'),
+            where('pregunta_id', '==', preguntaId),
+            where('alternativa_id', '==', alternativaMasVotada[0])
+          ));
+          
+          let textoAlternativa = alternativaMasVotada[0];
+          if (!alternativaDoc.empty) {
+            textoAlternativa = alternativaDoc.docs[0].data().texto_alternativa || alternativaMasVotada[0];
+          }
+          
+          alternativasMasSeleccionadas[preguntaId] = {
+            alternativaId: alternativaMasVotada[0],
+            texto: textoAlternativa,
+            cantidad: alternativaMasVotada[1]
+          };
+        }
+        
+        // Calcular promedio de respuestas por pregunta
+        const promedioRespuestas = totalPreguntas > 0 ? (totalRespuestas / totalPreguntas).toFixed(2) : 0;
+        
+        return {
+          id: docenteDoc.id,
+          nombre: docente.nombre,
+          apellido: docente.apellido,
+          nombreCompleto: `${docente.nombre} ${docente.apellido}`,
+          totalRespuestas,
+          totalPreguntas,
+          promedioRespuestas: parseFloat(promedioRespuestas),
+          estadisticasPorTipo,
+          alternativasMasSeleccionadas,
+          grado: docente.grado || 'No asignado'
+        };
+      })
+    );
+    
+    // Ordenar por nombre completo
+    return estadisticas.sort((a, b) => a.nombreCompleto.localeCompare(b.nombreCompleto));
+  } catch (error) {
+    console.error('Error al obtener estadísticas por docente:', error);
+    throw error;
+  }
 }; 

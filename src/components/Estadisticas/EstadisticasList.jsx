@@ -29,7 +29,8 @@ import {
   obtenerEstadisticasPorEncuesta,
   obtenerEstadisticasPorGrado,
   obtenerDocentesPorEncuesta,
-  obtenerDocentesPorGrado
+  obtenerDocentesPorGrado,
+  obtenerEstadisticasPorDocente
 } from '../../services/estadisticasService';
 import { useSnackbar } from '../../contexts/SnackbarContext';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
@@ -65,7 +66,8 @@ const EstadisticasList = () => {
     generales: null,
     porEncuesta: [],
     porGrado: [],
-    porPregunta: []
+    porPregunta: [],
+    porDocente: []
   });
   const { mostrarSnackbar } = useSnackbar();
   const [encuestaSeleccionada, setEncuestaSeleccionada] = useState(null);
@@ -79,16 +81,18 @@ const EstadisticasList = () => {
   const cargarEstadisticas = useCallback(async () => {
     try {
       setLoading(true);
-      const [generales, porEncuesta, porGrado] = await Promise.all([
+      const [generales, porEncuesta, porGrado, porDocente] = await Promise.all([
         obtenerEstadisticasGenerales(),
         obtenerEstadisticasPorEncuesta(),
-        obtenerEstadisticasPorGrado()
+        obtenerEstadisticasPorGrado(),
+        obtenerEstadisticasPorDocente()
       ]);
       setEstadisticas({
         generales,
         porEncuesta,
         porGrado,
-        porPregunta: []
+        porPregunta: [],
+        porDocente
       });
     } catch (error) {
       console.error('Error al cargar estadísticas:', error);
@@ -288,6 +292,7 @@ const EstadisticasList = () => {
         >
           <Tab label="Por Encuesta" />
           <Tab label="Por Grado" />
+          <Tab label="Por Docente" />
         </Tabs>
       </Paper>
 
@@ -611,6 +616,36 @@ const EstadisticasList = () => {
                 ))}
               </Box>
             )}
+          </>
+        )}
+
+        {tabValue === 2 && (
+          <>
+            <TableContainer component={Paper}>
+              <Table>
+                <TableHead>
+                  <TableRow sx={{ backgroundColor: '#308be7' }}>
+                    <TableCell sx={{ color: '#fff', align: 'center' }} align="center">Docente</TableCell>
+                    <TableCell sx={{ color: '#fff', align: 'center' }} align="center">Total Preguntas</TableCell>
+                    <TableCell sx={{ color: '#fff', align: 'center' }} align="center">Total Respuestas</TableCell>
+                    <TableCell sx={{ color: '#fff', align: 'center' }} align="center">Promedio Respuestas</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {estadisticas.porDocente.map((docente, idx) => (
+                    <TableRow
+                      key={docente.id}
+                      sx={idx % 2 === 0 ? { backgroundColor: '#e3f2fd', cursor: 'pointer' } : { backgroundColor: '#fff', cursor: 'pointer' }}
+                    >
+                      <TableCell align="center">{docente.nombreCompleto}</TableCell>
+                      <TableCell align="center">{docente.totalPreguntas}</TableCell>
+                      <TableCell align="center">{docente.totalRespuestas}</TableCell>
+                      <TableCell align="center">{docente.promedioRespuestas}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
           </>
         )}
       </Box>
