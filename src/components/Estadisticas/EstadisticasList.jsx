@@ -27,7 +27,9 @@ import {
 import {
   obtenerEstadisticasGenerales,
   obtenerEstadisticasPorEncuesta,
-  obtenerEstadisticasPorGrado
+  obtenerEstadisticasPorGrado,
+  obtenerDocentesPorEncuesta,
+  obtenerDocentesPorGrado
 } from '../../services/estadisticasService';
 import { useSnackbar } from '../../contexts/SnackbarContext';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
@@ -63,6 +65,8 @@ const EstadisticasList = () => {
   const { mostrarSnackbar } = useSnackbar();
   const [encuestaSeleccionada, setEncuestaSeleccionada] = useState(null);
   const [kpisEncuesta, setKpisEncuesta] = useState(null);
+  const [gradoSeleccionado, setGradoSeleccionado] = useState(null);
+  const [kpisGrado, setKpisGrado] = useState(null);
 
   const cargarEstadisticas = useCallback(async () => {
     try {
@@ -97,14 +101,34 @@ const EstadisticasList = () => {
       setKpisEncuesta(null);
       return;
     }
-    // Totales generales (ya que no hay relación directa, se muestran los totales del sistema)
-    setKpisEncuesta({
-      totalGrados: estadisticas.generales?.totalGrados || 0,
-      totalDocentes: estadisticas.generales?.totalDocentes || 0,
-      totalPreguntas: estadisticas.generales?.totalPreguntas || 0,
-      totalRespuestas: encuestaSeleccionada.totalRespuestas || 0
-    });
+    const fetchKPIs = async () => {
+      const totalDocentes = await obtenerDocentesPorEncuesta(encuestaSeleccionada.id);
+      setKpisEncuesta({
+        totalGrados: estadisticas.generales?.totalGrados || 0,
+        totalDocentes,
+        totalPreguntas: estadisticas.generales?.totalPreguntas || 0,
+        totalRespuestas: encuestaSeleccionada.totalRespuestas || 0
+      });
+    };
+    fetchKPIs();
   }, [encuestaSeleccionada, estadisticas.generales]);
+
+  // Calcular KPIs para el grado seleccionado
+  useEffect(() => {
+    if (!gradoSeleccionado) {
+      setKpisGrado(null);
+      return;
+    }
+    const fetchKPIs = async () => {
+      const totalDocentes = await obtenerDocentesPorGrado(gradoSeleccionado.id);
+      setKpisGrado({
+        totalDocentes,
+        totalPreguntas: estadisticas.generales?.totalPreguntas || 0,
+        totalRespuestas: gradoSeleccionado.totalRespuestas || 0
+      });
+    };
+    fetchKPIs();
+  }, [gradoSeleccionado, estadisticas.generales]);
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
@@ -148,14 +172,6 @@ const EstadisticasList = () => {
             value={estadisticas.generales?.totalEncuestas || 0}
             icon={<AssignmentIcon sx={{ color: 'primary.main', fontSize: 30 }} />}
             color="primary.main"
-          />
-        </Grid>
-        <Grid>
-          <StatCard
-            title="Encuestas Activas"
-            value={estadisticas.generales?.encuestasActivas || 0}
-            icon={<AssessmentIcon sx={{ color: 'success.main', fontSize: 30 }} />}
-            color="success.main"
           />
         </Grid>
         <Grid>
@@ -206,10 +222,13 @@ const EstadisticasList = () => {
               <Table>
                 <TableHead>
                   <TableRow sx={{ backgroundColor: '#308be7' }}>
-                    <TableCell sx={{ color: '#fff' }}>Título</TableCell>
-                    <TableCell sx={{ color: '#fff' }}>Estado</TableCell>
-                    <TableCell sx={{ color: '#fff' }}>Total Respuestas</TableCell>
-                    <TableCell sx={{ color: '#fff' }}>Fecha de Creación</TableCell>
+                    <TableCell sx={{ color: '#fff', align: 'center' }} align="center">Título</TableCell>
+                    <TableCell sx={{ color: '#fff', align: 'center' }} align="center">Estado</TableCell>
+                    <TableCell sx={{ color: '#fff', align: 'center' }} align="center">Total Respuestas</TableCell>
+                    <TableCell sx={{ color: '#fff', align: 'center' }} align="center">Total preguntas</TableCell>
+                    <TableCell sx={{ color: '#fff', align: 'center' }} align="center">Total Docentes</TableCell>
+                    <TableCell sx={{ color: '#fff', align: 'center' }} align="center">Participantes</TableCell>
+                    <TableCell sx={{ color: '#fff', align: 'center' }} align="center">Fecha de Creación</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -220,10 +239,13 @@ const EstadisticasList = () => {
                       onClick={() => setEncuestaSeleccionada(encuesta)}
                       selected={encuestaSeleccionada?.id === encuesta.id}
                     >
-                      <TableCell>{encuesta.titulo}</TableCell>
-                      <TableCell>{encuesta.estado}</TableCell>
-                      <TableCell>{encuesta.totalRespuestas}</TableCell>
-                      <TableCell>{encuesta.fechaCreacion.toLocaleDateString()}</TableCell>
+                      <TableCell align="center">{encuesta.titulo}</TableCell>
+                      <TableCell align="center">{encuesta.estado}</TableCell>
+                      <TableCell align="center">{encuesta.totalRespuestas}</TableCell>
+                      <TableCell align="center">{encuesta.totalPreguntas}</TableCell>
+                      <TableCell align="center">{encuesta.totalDocentes}</TableCell>
+                      <TableCell align="center">{encuesta.participantes}</TableCell>
+                      <TableCell align="center">{encuesta.fechaCreacion.toLocaleDateString()}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -248,13 +270,16 @@ const EstadisticasList = () => {
                     <StatCard title="Total Grados" value={kpisEncuesta.totalGrados} icon={<SchoolIcon color="info" />} color="info.main" />
                   </Grid>
                   <Grid>
-                    <StatCard title="Total Docentes" value={kpisEncuesta.totalDocentes} icon={<PeopleIcon color="warning" />} color="warning.main" />
+                    <StatCard title="Total Docentes" value={encuestaSeleccionada.totalDocentes} icon={<PeopleIcon color="warning" />} color="warning.main" />
                   </Grid>
                   <Grid>
-                    <StatCard title="Total Preguntas" value={kpisEncuesta.totalPreguntas} icon={<QuestionAnswerIcon color="secondary" />} color="secondary.main" />
+                    <StatCard title="Total Preguntas" value={encuestaSeleccionada.totalPreguntas} icon={<QuestionAnswerIcon color="secondary" />} color="secondary.main" />
                   </Grid>
                   <Grid>
                     <StatCard title="Total Respuestas" value={kpisEncuesta.totalRespuestas} icon={<AssignmentIcon color="primary" />} color="primary.main" />
+                  </Grid>
+                  <Grid>
+                    <StatCard title="Participantes" value={encuestaSeleccionada.participantes} icon={<PeopleIcon color="success" />} color="success.main" />
                   </Grid>
                 </Grid>
                 <Grid container spacing={2} sx={{ width: '100%' }}>
@@ -264,9 +289,10 @@ const EstadisticasList = () => {
                       <ResponsiveContainer width="100%" height={400}>
                         <BarChart data={[
                           { name: 'Grados', value: kpisEncuesta.totalGrados },
-                          { name: 'Docentes', value: kpisEncuesta.totalDocentes },
-                          { name: 'Preguntas', value: kpisEncuesta.totalPreguntas },
-                          { name: 'Respuestas', value: kpisEncuesta.totalRespuestas }
+                          { name: 'Docentes', value: encuestaSeleccionada.totalDocentes },
+                          { name: 'Preguntas', value: encuestaSeleccionada.totalPreguntas },
+                          { name: 'Respuestas', value: kpisEncuesta.totalRespuestas },
+                          { name: 'Participantes', value: encuestaSeleccionada.participantes }
                         ]}>
                           <XAxis dataKey="name" />
                           <YAxis allowDecimals={false} />
@@ -284,9 +310,10 @@ const EstadisticasList = () => {
                           <Pie
                             data={[
                               { name: 'Grados', value: kpisEncuesta.totalGrados },
-                              { name: 'Docentes', value: kpisEncuesta.totalDocentes },
-                              { name: 'Preguntas', value: kpisEncuesta.totalPreguntas },
-                              { name: 'Respuestas', value: kpisEncuesta.totalRespuestas }
+                              { name: 'Docentes', value: encuestaSeleccionada.totalDocentes },
+                              { name: 'Preguntas', value: encuestaSeleccionada.totalPreguntas },
+                              { name: 'Respuestas', value: kpisEncuesta.totalRespuestas },
+                              { name: 'Participantes', value: encuestaSeleccionada.participantes }
                             ]}
                             dataKey="value"
                             nameKey="name"
@@ -298,9 +325,10 @@ const EstadisticasList = () => {
                           >
                             {[
                               { name: 'Grados', value: kpisEncuesta.totalGrados },
-                              { name: 'Docentes', value: kpisEncuesta.totalDocentes },
-                              { name: 'Preguntas', value: kpisEncuesta.totalPreguntas },
-                              { name: 'Respuestas', value: kpisEncuesta.totalRespuestas }
+                              { name: 'Docentes', value: encuestaSeleccionada.totalDocentes },
+                              { name: 'Preguntas', value: encuestaSeleccionada.totalPreguntas },
+                              { name: 'Respuestas', value: kpisEncuesta.totalRespuestas },
+                              { name: 'Participantes', value: encuestaSeleccionada.participantes }
                             ].map((entry, index) => (
                               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                             ))}
@@ -318,26 +346,133 @@ const EstadisticasList = () => {
         )}
 
         {tabValue === 1 && (
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>
-                <TableRow sx={{ backgroundColor: '#308be7' }}>
-                  <TableCell sx={{ color: '#fff' }}>Grado</TableCell>
-                  <TableCell sx={{ color: '#fff' }}>Nivel</TableCell>
-                  <TableCell sx={{ color: '#fff' }}>Total Respuestas</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {estadisticas.porGrado.map((grado, idx) => (
-                  <TableRow key={grado.id} sx={idx % 2 === 0 ? { backgroundColor: '#e3f2fd' } : { backgroundColor: '#fff' }}>
-                    <TableCell>{grado.nombre}</TableCell>
-                    <TableCell>{grado.nivel}</TableCell>
-                    <TableCell>{grado.totalRespuestas}</TableCell>
+          <>
+            <TableContainer component={Paper}>
+              <Table>
+                <TableHead>
+                  <TableRow sx={{ backgroundColor: '#308be7' }}>
+                    <TableCell sx={{ color: '#fff', align: 'center' }} align="center">Grado</TableCell>
+                    <TableCell sx={{ color: '#fff', align: 'center' }} align="center">Nivel</TableCell>
+                    <TableCell sx={{ color: '#fff', align: 'center' }} align="center">Total Respuestas</TableCell>
+                    <TableCell sx={{ color: '#fff', align: 'center' }} align="center">Total preguntas</TableCell>
+                    <TableCell sx={{ color: '#fff', align: 'center' }} align="center">Total Docentes</TableCell>
+                    <TableCell sx={{ color: '#fff', align: 'center' }} align="center">Participantes</TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                </TableHead>
+                <TableBody>
+                  {estadisticas.porGrado
+                    .slice()
+                    .sort((a, b) => {
+                      if (a.nivel < b.nivel) return -1;
+                      if (a.nivel > b.nivel) return 1;
+                      if (a.nombre < b.nombre) return -1;
+                      if (a.nombre > b.nombre) return 1;
+                      return 0;
+                    })
+                    .map((grado, idx) => (
+                      <TableRow
+                        key={grado.id}
+                        sx={idx % 2 === 0 ? { backgroundColor: '#e3f2fd', cursor: 'pointer' } : { backgroundColor: '#fff', cursor: 'pointer' }}
+                        onClick={() => setGradoSeleccionado(grado)}
+                        selected={gradoSeleccionado?.id === grado.id}
+                      >
+                        <TableCell align="center">{grado.nombre}</TableCell>
+                        <TableCell align="center">{grado.nivel}</TableCell>
+                        <TableCell align="center">{grado.totalRespuestas}</TableCell>
+                        <TableCell align="center">{grado.totalPreguntas}</TableCell>
+                        <TableCell align="center">{grado.totalDocentes}</TableCell>
+                        <TableCell align="center">{grado.participantes}</TableCell>
+                      </TableRow>
+                    ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+            {/* KPIs y gráficos para el grado seleccionado */}
+            {gradoSeleccionado && kpisGrado && (
+              <Box sx={{ mt: 4 }}>
+                <Typography variant="h6" sx={{ mb: 2 }}>
+                  Resumen del grado: <b>{gradoSeleccionado.nombre}</b>
+                </Typography>
+                <Grid
+                  container
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                    gap: 2,
+                    mb: 2,
+                  }}
+                >
+                  <Grid>
+                    <StatCard title="Total Docentes" value={gradoSeleccionado.totalDocentes} icon={<PeopleIcon color="warning" />} color="warning.main" />
+                  </Grid>
+                  <Grid>
+                    <StatCard title="Total Preguntas" value={gradoSeleccionado.totalPreguntas} icon={<QuestionAnswerIcon color="secondary" />} color="secondary.main" />
+                  </Grid>
+                  <Grid>
+                    <StatCard title="Total Respuestas" value={kpisGrado.totalRespuestas} icon={<AssignmentIcon color="primary" />} color="primary.main" />
+                  </Grid>
+                  <Grid>
+                    <StatCard title="Participantes" value={gradoSeleccionado.participantes} icon={<PeopleIcon color="success" />} color="success.main" />
+                  </Grid>
+                </Grid>
+                <Grid container spacing={2} sx={{ width: '100%' }}>
+                  <Grid item xs={12} md={6} sx={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <Paper sx={{ p: 2, width: '80%', height: 400, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', mx: 'auto', my: 4 }}>
+                      <Typography variant="h6" sx={{ mb: 3, fontWeight: 'bold', fontSize: '1.3rem', textAlign: 'center' }}>Gráfico de Barras</Typography>
+                      <ResponsiveContainer width="100%" height={400}>
+                        <BarChart data={[
+                          { name: 'Docentes', value: gradoSeleccionado.totalDocentes },
+                          { name: 'Preguntas', value: gradoSeleccionado.totalPreguntas },
+                          { name: 'Respuestas', value: kpisGrado.totalRespuestas },
+                          { name: 'Participantes', value: gradoSeleccionado.participantes }
+                        ]}>
+                          <XAxis dataKey="name" />
+                          <YAxis allowDecimals={false} />
+                          <Tooltip />
+                          <Bar dataKey="value" fill="#43a047" radius={[8, 8, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </Paper>
+                  </Grid>
+                  <Grid item xs={12} md={6} sx={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <Paper sx={{ p: 2, width: '80%', height: 400, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', mx: 'auto', my: 4 }}>
+                      <Typography variant="h6" sx={{ mb: 3, fontWeight: 'bold', fontSize: '1.3rem', textAlign: 'center' }}>Gráfico Circular</Typography>
+                      <ResponsiveContainer width="100%" height={400}>
+                        <PieChart>
+                          <Pie
+                            data={[
+                              { name: 'Docentes', value: gradoSeleccionado.totalDocentes },
+                              { name: 'Preguntas', value: gradoSeleccionado.totalPreguntas },
+                              { name: 'Respuestas', value: kpisGrado.totalRespuestas },
+                              { name: 'Participantes', value: gradoSeleccionado.participantes }
+                            ]}
+                            dataKey="value"
+                            nameKey="name"
+                            cx="50%"
+                            cy="50%"
+                            outerRadius={160}
+                            fill="#43a047"
+                            label
+                          >
+                            {[
+                              { name: 'Docentes', value: gradoSeleccionado.totalDocentes },
+                              { name: 'Preguntas', value: gradoSeleccionado.totalPreguntas },
+                              { name: 'Respuestas', value: kpisGrado.totalRespuestas },
+                              { name: 'Participantes', value: gradoSeleccionado.participantes }
+                            ].map((entry, index) => (
+                              <Cell key={`cell-grado-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Legend />
+                          <Tooltip />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </Paper>
+                  </Grid>
+                </Grid>
+              </Box>
+            )}
+          </>
         )}
       </Box>
     </Box>

@@ -51,7 +51,28 @@ export const obtenerEstadisticasPorEncuesta = async () => {
           where('encuesta_id', '==', encuestaDoc.id)
         );
         const respuestasSnapshot = await getDocs(respuestasQuery);
-        
+        // Obtener preguntas de la encuesta (solo las asociadas a esta encuesta)
+        const preguntasQuery = query(
+          collection(db, 'encuesta_pregunta'),
+          where('encuesta_id', '==', encuestaDoc.id)
+        );
+        const preguntasSnapshot = await getDocs(preguntasQuery);
+        const totalPreguntas = preguntasSnapshot.size;
+        // Obtener docentes posibles de la encuesta (todos los posibles)
+        const totalDocentes = await obtenerDocentesPorEncuesta(encuestaDoc.id);
+        // Obtener docentes respondidos (únicos en respuestas)
+        const docentesRespondidosSet = new Set();
+        respuestasSnapshot.forEach(doc => {
+          const data = doc.data();
+          if (data.docente_id) {
+            docentesRespondidosSet.add(data.docente_id);
+          }
+        });
+        const totalDocentesRespondidos = docentesRespondidosSet.size;
+        const totalRespuestas = respuestasSnapshot.size;
+        // Participantes = totalRespuestas / (totalPreguntas * totalDocentesRespondidos)
+        const divisor = totalPreguntas > 0 && totalDocentesRespondidos > 0 ? (totalPreguntas * totalDocentesRespondidos) : 1;
+        const participantes = Math.round(totalRespuestas / divisor);
         let fechaCreacion = new Date();
         if (encuesta.createdAt) {
           if (typeof encuesta.createdAt.toDate === 'function') {
@@ -65,7 +86,11 @@ export const obtenerEstadisticasPorEncuesta = async () => {
         return {
           id: encuestaDoc.id,
           titulo: encuesta.titulo,
-          totalRespuestas: respuestasSnapshot.size,
+          totalRespuestas,
+          totalPreguntas,
+          totalDocentes,
+          totalDocentesRespondidos,
+          participantes,
           estado: encuesta.estado,
           fechaCreacion
         };
@@ -93,12 +118,34 @@ export const obtenerEstadisticasPorGrado = async () => {
           where('grado_id', '==', gradoDoc.id)
         );
         const respuestasSnapshot = await getDocs(respuestasQuery);
-        
+        // Obtener encuesta activa (o puedes adaptar para otra encuesta específica)
+        const encuestasQuery = query(collection(db, 'encuestas'), where('estado', '==', 'activa'));
+        const encuestasSnapshot = await getDocs(encuestasQuery);
+        let totalPreguntas = 0;
+        let totalDocentes = 0;
+        if (!encuestasSnapshot.empty) {
+          const encuestaId = encuestasSnapshot.docs[0].id;
+          // Preguntas solo de esta encuesta
+          const preguntasQuery = query(
+            collection(db, 'encuesta_pregunta'),
+            where('encuesta_id', '==', encuestaId)
+          );
+          const preguntasSnapshot = await getDocs(preguntasQuery);
+          totalPreguntas = preguntasSnapshot.size;
+          // Docentes solo de este grado
+          totalDocentes = await obtenerDocentesPorGrado(gradoDoc.id);
+        }
+        const totalRespuestas = respuestasSnapshot.size;
+        const divisor = totalPreguntas > 0 && totalDocentes > 0 ? (totalPreguntas * totalDocentes) : 1;
+        const participantes = Math.round(totalRespuestas / divisor);
         return {
           id: gradoDoc.id,
           nombre: grado.nombre,
           nivel: grado.nivel,
-          totalRespuestas: respuestasSnapshot.size
+          totalRespuestas,
+          totalPreguntas,
+          totalDocentes,
+          participantes
         };
       })
     );
@@ -167,5 +214,57 @@ export const obtenerEstadisticasPorPregunta = async (encuestaId) => {
   } catch (error) {
     console.error('Error al obtener estadísticas por pregunta:', error);
     throw error;
+  }
+};
+
+// Obtener docentes únicos de una encuesta
+export const obtenerDocentesPorEncuesta = async (encuestaId) => {
+  try {
+    // 1. Obtener todas las preguntas de la encuesta
+    const preguntasQuery = query(
+      collection(db, 'encuesta_pregunta'),
+      where('encuesta_id', '==', encuestaId)
+    );
+    const preguntasSnapshot = await getDocs(preguntasQuery);
+    if (preguntasSnapshot.empty) return 0;
+
+    // 2. Obtener todos los grados asociados a esas preguntas (si la pregunta tiene grado_id, si no, debes adaptar esto)
+    // Suponiendo que cada pregunta tiene un grado_id (si no, deberás adaptar la lógica)
+    // Si no hay grado_id en la pregunta, deberás obtener los grados de otra forma
+    // Aquí asumimos que cada pregunta está asociada a un grado
+    // Si no es así, por favor dime cómo se relacionan
+    // const gradoIds = [...new Set(preguntasSnapshot.docs.map(doc => doc.data().grado_id))].filter(Boolean);
+    // Como no se ve grado_id en la imagen, asumimos que la encuesta está asociada a todos los grados
+    // Por ahora, obtendremos todos los docentes del sistema (esto se puede mejorar si tienes la relación)
+
+    // 3. Obtener todos los docentes de todos los grados (sin duplicados)
+    const gradosDocentesSnapshot = await getDocs(collection(db, 'grados_docentes'));
+    const docentesSet = new Set();
+    gradosDocentesSnapshot.forEach(doc => {
+      docentesSet.add(doc.data().docenteId);
+    });
+    return docentesSet.size;
+  } catch (error) {
+    console.error('Error al obtener docentes por encuesta:', error);
+    return 0;
+  }
+};
+
+// Obtener docentes de un grado
+export const obtenerDocentesPorGrado = async (gradoId) => {
+  try {
+    const gradosDocentesQuery = query(
+      collection(db, 'grados_docentes'),
+      where('gradoId', '==', gradoId)
+    );
+    const gradosDocentesSnapshot = await getDocs(gradosDocentesQuery);
+    const docentesSet = new Set();
+    gradosDocentesSnapshot.forEach(doc => {
+      docentesSet.add(doc.data().docenteId);
+    });
+    return docentesSet.size;
+  } catch (error) {
+    console.error('Error al obtener docentes por grado:', error);
+    return 0;
   }
 }; 
