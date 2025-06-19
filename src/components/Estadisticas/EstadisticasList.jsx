@@ -66,8 +66,7 @@ const EstadisticasList = () => {
     generales: null,
     porEncuesta: [],
     porGrado: [],
-    porPregunta: [],
-    porDocente: []
+    porPregunta: []
   });
   const { mostrarSnackbar } = useSnackbar();
   const [encuestaSeleccionada, setEncuestaSeleccionada] = useState(null);
@@ -172,24 +171,34 @@ const EstadisticasList = () => {
       // Alternativas por pregunta
       const alternativasPorPreguntaTemp = {};
       for (const preguntaId of preguntasIds) {
-        const alternativasSnapshot = await getDocs(query(collection(db, 'pregunta_alternativa'), where('pregunta_id', '==', preguntaId)));
-        alternativasPorPreguntaTemp[preguntaId] = await Promise.all(alternativasSnapshot.docs.map(async doc => {
-          const altId = doc.data().alternativa_id;
-          let texto = doc.data().texto_alternativa;
-          if (!texto) {
-            // Buscar en la colección alternativas si no está el texto
-            const altDocSnap = await getDocs(query(collection(db, 'alternativas'), where('__name__', '==', altId)));
+        const alternativasSnapshot = await getDocs(query(
+          collection(db, 'pregunta_alternativa'),
+          where('pregunta_id', '==', preguntaId)
+        ));
+        alternativasPorPreguntaTemp[preguntaId] = [];
+        for (const altDoc of alternativasSnapshot.docs) {
+          const altData = altDoc.data();
+          const altId = altData.alternativa_id;
+          let textoAlternativa = altData.texto_alternativa;
+          
+          // Si no hay texto en pregunta_alternativa, buscar en la colección alternativas
+          if (!textoAlternativa) {
+            const altDocSnap = await getDocs(query(
+              collection(db, 'alternativas'),
+              where('__name__', '==', altId)
+            ));
             if (!altDocSnap.empty) {
-              texto = altDocSnap.docs[0].data().texto_alternativa || altId;
+              textoAlternativa = altDocSnap.docs[0].data().texto_alternativa || altId;
             } else {
-              texto = altId;
+              textoAlternativa = altId;
             }
           }
-          return {
+          
+          alternativasPorPreguntaTemp[preguntaId].push({
             id: altId,
-            texto
-          };
-        }));
+            texto: textoAlternativa
+          });
+        }
       }
       setAlternativasPorPregunta(alternativasPorPreguntaTemp);
       // Respuestas por alternativa
@@ -292,7 +301,6 @@ const EstadisticasList = () => {
         >
           <Tab label="Por Encuesta" />
           <Tab label="Por Grado" />
-          <Tab label="Por Docente" />
         </Tabs>
       </Paper>
 
@@ -384,43 +392,6 @@ const EstadisticasList = () => {
                       </ResponsiveContainer>
                     </Paper>
                   </Grid>
-                  <Grid item xs={12} md={6} sx={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <Paper sx={{ p: 2, width: '80%', height: 400, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', mx: 'auto', my: 4 }}>
-                      <Typography variant="h6" sx={{ mb: 3, fontWeight: 'bold', fontSize: '1.3rem', textAlign: 'center' }}>Gráfico Circular</Typography>
-                      <ResponsiveContainer width="100%" height={400}>
-                        <PieChart>
-                          <Pie
-                            data={[
-                              { name: 'Grados', value: kpisEncuesta.totalGrados },
-                              { name: 'Docentes', value: encuestaSeleccionada.totalDocentes },
-                              { name: 'Preguntas', value: encuestaSeleccionada.totalPreguntas },
-                              { name: 'Respuestas', value: kpisEncuesta.totalRespuestas },
-                              { name: 'Participantes', value: encuestaSeleccionada.participantes }
-                            ]}
-                            dataKey="value"
-                            nameKey="name"
-                            cx="50%"
-                            cy="50%"
-                            outerRadius={160}
-                            fill="#308be7"
-                            label
-                          >
-                            {[
-                              { name: 'Grados', value: kpisEncuesta.totalGrados },
-                              { name: 'Docentes', value: encuestaSeleccionada.totalDocentes },
-                              { name: 'Preguntas', value: encuestaSeleccionada.totalPreguntas },
-                              { name: 'Respuestas', value: kpisEncuesta.totalRespuestas },
-                              { name: 'Participantes', value: encuestaSeleccionada.participantes }
-                            ].map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                            ))}
-                          </Pie>
-                          <Legend />
-                          <Tooltip />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </Paper>
-                  </Grid>
                 </Grid>
               </Box>
             )}
@@ -497,61 +468,6 @@ const EstadisticasList = () => {
                     <StatCard title="Participantes" value={gradoSeleccionado.participantes} icon={<PeopleIcon color="success" />} color="success.main" />
                   </Grid>
                 </Grid>
-                <Grid container spacing={2} sx={{ width: '100%' }}>
-                  <Grid item xs={12} md={6} sx={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <Paper sx={{ p: 2, width: '80%', height: 400, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', mx: 'auto', my: 4 }}>
-                      <Typography variant="h6" sx={{ mb: 3, fontWeight: 'bold', fontSize: '1.3rem', textAlign: 'center' }}>Gráfico de Barras</Typography>
-                      <ResponsiveContainer width="100%" height={400}>
-                        <BarChart data={[
-                          { name: 'Docentes', value: gradoSeleccionado.totalDocentes },
-                          { name: 'Preguntas', value: gradoSeleccionado.totalPreguntas },
-                          { name: 'Respuestas', value: kpisGrado.totalRespuestas },
-                          { name: 'Participantes', value: gradoSeleccionado.participantes }
-                        ]}>
-                          <XAxis dataKey="name" />
-                          <YAxis allowDecimals={false} />
-                          <Tooltip />
-                          <Bar dataKey="value" fill="#43a047" radius={[8, 8, 0, 0]} />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </Paper>
-                  </Grid>
-                  <Grid item xs={12} md={6} sx={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <Paper sx={{ p: 2, width: '80%', height: 400, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', mx: 'auto', my: 4 }}>
-                      <Typography variant="h6" sx={{ mb: 3, fontWeight: 'bold', fontSize: '1.3rem', textAlign: 'center' }}>Gráfico Circular</Typography>
-                      <ResponsiveContainer width="100%" height={400}>
-                        <PieChart>
-                          <Pie
-                            data={[
-                              { name: 'Docentes', value: gradoSeleccionado.totalDocentes },
-                              { name: 'Preguntas', value: gradoSeleccionado.totalPreguntas },
-                              { name: 'Respuestas', value: kpisGrado.totalRespuestas },
-                              { name: 'Participantes', value: gradoSeleccionado.participantes }
-                            ]}
-                            dataKey="value"
-                            nameKey="name"
-                            cx="50%"
-                            cy="50%"
-                            outerRadius={160}
-                            fill="#43a047"
-                            label
-                          >
-                            {[
-                              { name: 'Docentes', value: gradoSeleccionado.totalDocentes },
-                              { name: 'Preguntas', value: gradoSeleccionado.totalPreguntas },
-                              { name: 'Respuestas', value: kpisGrado.totalRespuestas },
-                              { name: 'Participantes', value: gradoSeleccionado.participantes }
-                            ].map((entry, index) => (
-                              <Cell key={`cell-grado-${index}`} fill={COLORS[index % COLORS.length]} />
-                            ))}
-                          </Pie>
-                          <Legend />
-                          <Tooltip />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </Paper>
-                  </Grid>
-                </Grid>
               </Box>
             )}
             {/* Estadística por pregunta y alternativa para el grado seleccionado */}
@@ -561,93 +477,52 @@ const EstadisticasList = () => {
                   Estadística por pregunta (solo para el grado seleccionado)
                 </Typography>
                 {preguntasPorGrado.map((pregunta, idx) => (
-                  <Box key={pregunta.id} sx={{ mb: 5, p: 2, border: '1px solid #e0e0e0', borderRadius: 2, background: '#fafbfc' }}>
+                  <Box key={pregunta.id} sx={{ mb: 2, p: 2, border: '1px solid #e0e0e0', borderRadius: 2, background: '#fafbfc' }}>
                     <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>{`Pregunta ${idx + 1}: ${pregunta.texto}`}</Typography>
-                    {/* Tabla de alternativas */}
-                    <TableContainer component={Paper} sx={{ mb: 2, maxWidth: 600 }}>
-                      <Table size="small">
-                        <TableHead>
-                          <TableRow>
-                            <TableCell align="center" sx={{ fontWeight: 'bold' }}>Alternativa</TableCell>
-                            <TableCell align="center" sx={{ fontWeight: 'bold' }}>Cantidad de respuestas</TableCell>
-                          </TableRow>
-                        </TableHead>
-                        <TableBody>
-                          {(alternativasPorPregunta[pregunta.id] || []).map((alt) => (
-                            <TableRow key={alt.id}>
-                              <TableCell align="center">{alt.texto}</TableCell>
-                              <TableCell align="center">{respuestasPorAlternativa[pregunta.id]?.[alt.id] || 0}</TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </TableContainer>
-                    {/* Gráfico de barras */}
-                    <Box sx={{ width: '100%', maxWidth: 600, height: 300, mx: 'auto' }}>
-                      <ReResponsiveContainer width="100%" height={250}>
-                        <ReBarChart
-                          data={(alternativasPorPregunta[pregunta.id] || []).map(alt => ({
-                            name: alt.texto,
-                            value: respuestasPorAlternativa[pregunta.id]?.[alt.id] || 0
-                          }))}
-                          layout="vertical"
-                          margin={{ left: 40, right: 40 }}
-                        >
-                          <ReXAxis type="number" allowDecimals={false} />
-                          <ReYAxis type="category" dataKey="name" width={180} />
-                          <ReTooltip />
-                          <ReLegend />
-                          <ReBar dataKey="value" fill="#308be7">
-                            {(alternativasPorPregunta[pregunta.id] || []).map((alt, i) => (
-                              <ReCell key={alt.id} fill={COLORS[i % COLORS.length]} />
-                            ))}
-                          </ReBar>
-                        </ReBarChart>
-                      </ReResponsiveContainer>
-                    </Box>
-
-                    {/* --- NUEVA SECCIÓN: TABLA CRUZADA Y GRÁFICO APILADO --- */}
-                    <CruzadaPreguntaDocenteAlternativa
-                      gradoId={gradoSeleccionado.id}
-                      pregunta={pregunta}
-                      alternativas={alternativasPorPregunta[pregunta.id] || []}
-                    />
+                    <Grid container spacing={2} alignItems="flex-start">
+                      {/* Tabla de alternativas */}
+                      <Grid item xs={12} md={4}>
+                        <TableContainer component={Paper} sx={{ mb: 0 }}>
+                          <Table size="small">
+                            <TableHead>
+                              <TableRow>
+                                <TableCell align="center" sx={{ fontWeight: 'bold' }}>Alternativa</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 'bold' }}>Cantidad de respuestas</TableCell>
+                              </TableRow>
+                            </TableHead>
+                            <TableBody>
+                              {(alternativasPorPregunta[pregunta.id] || []).map((alt) => (
+                                <TableRow key={alt.id}>
+                                  <TableCell align="center">{alt.texto}</TableCell>
+                                  <TableCell align="center">{respuestasPorAlternativa[pregunta.id]?.[alt.id] || 0}</TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </TableContainer>
+                      </Grid>
+                      {/* Tabla cruzada al costado */}
+                      <Grid item xs={12} md={8}>
+                        <CruzadaPreguntaDocenteAlternativa
+                          gradoId={gradoSeleccionado.id}
+                          pregunta={pregunta}
+                          alternativas={alternativasPorPregunta[pregunta.id] || []}
+                        />
+                      </Grid>
+                    </Grid>
                   </Box>
                 ))}
               </Box>
             )}
+
+            {/* --- NUEVA SECCIÓN: ESTADÍSTICA GENERAL POR ALTERNATIVAS --- */}
+            {gradoSeleccionado && (
+              <EstadisticaGeneralPorAlternativas gradoId={gradoSeleccionado.id} />
+            )}
           </>
         )}
 
-        {tabValue === 2 && (
-          <>
-            <TableContainer component={Paper}>
-              <Table>
-                <TableHead>
-                  <TableRow sx={{ backgroundColor: '#308be7' }}>
-                    <TableCell sx={{ color: '#fff', align: 'center' }} align="center">Docente</TableCell>
-                    <TableCell sx={{ color: '#fff', align: 'center' }} align="center">Total Preguntas</TableCell>
-                    <TableCell sx={{ color: '#fff', align: 'center' }} align="center">Total Respuestas</TableCell>
-                    <TableCell sx={{ color: '#fff', align: 'center' }} align="center">Promedio Respuestas</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {estadisticas.porDocente.map((docente, idx) => (
-                    <TableRow
-                      key={docente.id}
-                      sx={idx % 2 === 0 ? { backgroundColor: '#e3f2fd', cursor: 'pointer' } : { backgroundColor: '#fff', cursor: 'pointer' }}
-                    >
-                      <TableCell align="center">{docente.nombreCompleto}</TableCell>
-                      <TableCell align="center">{docente.totalPreguntas}</TableCell>
-                      <TableCell align="center">{docente.totalRespuestas}</TableCell>
-                      <TableCell align="center">{docente.promedioRespuestas}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </>
-        )}
+        {tabValue === 2 && null}
       </Box>
     </Box>
   );
@@ -767,6 +642,254 @@ const CruzadaPreguntaDocenteAlternativa = ({ gradoId, pregunta, alternativas }) 
             ))}
           </ReBarChart>
         </ReResponsiveContainer>
+      </Box>
+    </Box>
+  );
+};
+
+// Componente para estadística general por alternativas de todos los docentes del grado
+const EstadisticaGeneralPorAlternativas = ({ gradoId }) => {
+  const [docentes, setDocentes] = React.useState([]);
+  const [alternativas, setAlternativas] = React.useState([]);
+  const [conteoGeneral, setConteoGeneral] = React.useState({}); // {docenteId: {alternativaId: cantidad}}
+  const [loading, setLoading] = React.useState(true);
+  const theme = useTheme();
+
+  React.useEffect(() => {
+    let mounted = true;
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        // 1. Obtener docentes del grado
+        const docentesList = await getDocentesByGrado(gradoId);
+        const docentesOrdenados = docentesList.sort((a, b) => a.nombre.localeCompare(b.nombre));
+
+        // 2. Obtener encuesta activa
+        const encuestasQuery = query(collection(db, 'encuestas'), where('estado', '==', 'activa'));
+        const encuestasSnapshot = await getDocs(encuestasQuery);
+        if (encuestasSnapshot.empty) return;
+        const encuestaId = encuestasSnapshot.docs[0].id;
+
+        // 3. Obtener todas las alternativas de la encuesta
+        const preguntasQuery = query(collection(db, 'encuesta_pregunta'), where('encuesta_id', '==', encuestaId));
+        const preguntasSnapshot = await getDocs(preguntasQuery);
+        const preguntasIds = preguntasSnapshot.docs.map(doc => doc.data().pregunta_id);
+
+        // Obtener todas las alternativas únicas
+        const alternativasSet = new Set();
+        const alternativasInfo = {};
+        
+        for (const preguntaId of preguntasIds) {
+          const alternativasSnapshot = await getDocs(query(
+            collection(db, 'pregunta_alternativa'),
+            where('pregunta_id', '==', preguntaId)
+          ));
+          
+          for (const altDoc of alternativasSnapshot.docs) {
+            const altData = altDoc.data();
+            const altId = altData.alternativa_id;
+            alternativasSet.add(altId);
+            
+            if (!alternativasInfo[altId]) {
+              let textoAlternativa = altData.texto_alternativa;
+              
+              // Si no hay texto en pregunta_alternativa, buscar en la colección alternativas
+              if (!textoAlternativa) {
+                const altDocSnap = await getDocs(query(
+                  collection(db, 'alternativas'),
+                  where('__name__', '==', altId)
+                ));
+                if (!altDocSnap.empty) {
+                  textoAlternativa = altDocSnap.docs[0].data().texto_alternativa || altId;
+                } else {
+                  textoAlternativa = altId;
+                }
+              }
+              
+              alternativasInfo[altId] = {
+                id: altId,
+                texto: textoAlternativa
+              };
+            }
+          }
+        }
+
+        const alternativasList = Array.from(alternativasSet).map(altId => alternativasInfo[altId]);
+        const alternativasOrdenadas = alternativasList.sort((a, b) => a.texto.localeCompare(b.texto));
+
+        // 4. Inicializar estructura de conteo
+        const conteoTemp = {};
+        for (const docente of docentesOrdenados) {
+          conteoTemp[docente.id] = {};
+          for (const alt of alternativasOrdenadas) {
+            conteoTemp[docente.id][alt.id] = 0;
+          }
+        }
+
+        // 5. Obtener todas las respuestas del grado
+        const respuestasQuery = query(collection(db, 'respuestas'), where('grado_id', '==', gradoId));
+        const respuestasSnapshot = await getDocs(respuestasQuery);
+        
+        respuestasSnapshot.forEach(doc => {
+          const data = doc.data();
+          const docenteId = data.docente_id;
+          const alternativaId = data.alternativa_id;
+          
+          if (conteoTemp[docenteId] && conteoTemp[docenteId][alternativaId] !== undefined) {
+            conteoTemp[docenteId][alternativaId]++;
+          }
+        });
+
+        if (mounted) {
+          setDocentes(docentesOrdenados);
+          setAlternativas(alternativasOrdenadas);
+          setConteoGeneral(conteoTemp);
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('Error al cargar estadísticas generales por alternativas:', error);
+        setLoading(false);
+      }
+    };
+    fetchData();
+    return () => { mounted = false; };
+  }, [gradoId]);
+
+  if (loading) return <Box sx={{ my: 2, textAlign: 'center' }}><CircularProgress size={24} /></Box>;
+  if (!docentes.length || !alternativas.length) return null;
+
+  // Calcular totales por alternativa
+  const totalesPorAlternativa = {};
+  alternativas.forEach(alt => {
+    totalesPorAlternativa[alt.id] = docentes.reduce((total, docente) => 
+      total + (conteoGeneral[docente.id]?.[alt.id] || 0), 0
+    );
+  });
+
+  // Preparar datos para gráficos
+  const chartDataPorAlternativa = alternativas.map(alt => ({
+    alternativa: alt.texto,
+    total: totalesPorAlternativa[alt.id]
+  }));
+
+  const chartDataPorDocente = docentes.map(docente => {
+    const row = { docente: docente.nombre };
+    alternativas.forEach(alt => {
+      row[alt.texto] = conteoGeneral[docente.id]?.[alt.id] || 0;
+    });
+    return row;
+  });
+
+  return (
+    <Box sx={{ mt: 6 }}>
+      <Typography variant="h5" sx={{ mb: 3, fontWeight: 'bold' }}>
+        Estadística General por Alternativas (Todos los docentes del grado)
+      </Typography>
+
+      {/* Tabla cruzada general */}
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>
+          Tabla Cruzada: Docentes vs Alternativas
+        </Typography>
+        <TableContainer component={Paper} sx={{ mb: 2, maxWidth: '100%', overflowX: 'auto' }}>
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell align="center" sx={{ fontWeight: 'bold', background: theme.palette.grey[200], minWidth: 150 }}>
+                  Docente
+                </TableCell>
+                {alternativas.map((alt) => (
+                  <TableCell key={alt.id} align="center" sx={{ fontWeight: 'bold', background: theme.palette.grey[100], minWidth: 120 }}>
+                    {alt.texto}
+                  </TableCell>
+                ))}
+                <TableCell align="center" sx={{ fontWeight: 'bold', background: theme.palette.grey[200] }}>
+                  Total
+                </TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {docentes.map((docente) => {
+                const totalDocente = alternativas.reduce((sum, alt) => 
+                  sum + (conteoGeneral[docente.id]?.[alt.id] || 0), 0
+                );
+                return (
+                  <TableRow key={docente.id}>
+                    <TableCell align="center" sx={{ fontWeight: 600 }}>{docente.nombre}</TableCell>
+                    {alternativas.map((alt) => (
+                      <TableCell key={alt.id} align="center">
+                        {conteoGeneral[docente.id]?.[alt.id] || 0}
+                      </TableCell>
+                    ))}
+                    <TableCell align="center" sx={{ fontWeight: 'bold', background: theme.palette.grey[50] }}>
+                      {totalDocente}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+              <TableRow sx={{ background: theme.palette.grey[100] }}>
+                <TableCell align="center" sx={{ fontWeight: 'bold' }}>TOTAL</TableCell>
+                {alternativas.map((alt) => (
+                  <TableCell key={alt.id} align="center" sx={{ fontWeight: 'bold' }}>
+                    {totalesPorAlternativa[alt.id]}
+                  </TableCell>
+                ))}
+                <TableCell align="center" sx={{ fontWeight: 'bold' }}>
+                  {Object.values(totalesPorAlternativa).reduce((sum, total) => sum + total, 0)}
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Box>
+
+      {/* Ranking Individual por Alternativa en grilla */}
+      <Box sx={{ mt: 4 }}>
+        <Typography variant="h6" sx={{ mb: 3, fontWeight: 'bold' }}>
+          Ranking Individual por Alternativa
+        </Typography>
+        <Grid container spacing={2}>
+          {alternativas.map((alt) => {
+            // Ordenar docentes por esta alternativa específica
+            const rankingDocentes = [...docentes]
+              .map(docente => ({
+                nombre: docente.nombre,
+                cantidad: conteoGeneral[docente.id]?.[alt.id] || 0
+              }))
+              .sort((a, b) => b.cantidad - a.cantidad)
+              .filter(item => item.cantidad > 0);
+
+            if (rankingDocentes.length === 0) return null;
+
+            return (
+              <Grid item xs={12} md={6} lg={4} key={alt.id}>
+                <Paper sx={{ p: 2 }}>
+                  <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 'bold', textAlign: 'center' }}>
+                    Ranking: {alt.texto}
+                  </Typography>
+                  <TableContainer component={Paper}>
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell align="center" sx={{ fontWeight: 'bold' }}>Docente</TableCell>
+                          <TableCell align="center" sx={{ fontWeight: 'bold' }}>Cantidad</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {rankingDocentes.map((row) => (
+                          <TableRow key={row.nombre}>
+                            <TableCell align="center">{row.nombre}</TableCell>
+                            <TableCell align="center">{row.cantidad}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </Paper>
+              </Grid>
+            );
+          })}
+        </Grid>
       </Box>
     </Box>
   );
