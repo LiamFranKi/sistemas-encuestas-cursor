@@ -15,7 +15,8 @@ import {
   TableRow,
   Tabs,
   Tab,
-  Alert
+  Alert,
+  Stack
 } from '@mui/material';
 import {
   Assessment as AssessmentIcon,
@@ -39,6 +40,8 @@ import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { getDocentesByGrado } from '../../services/firestore';
 import { useTheme } from '@mui/material/styles';
+import ExportarPDF from './ExportarPDF';
+import ExportarExcel from './ExportarExcel';
 
 const COLORS = ['#308be7', '#43a047', '#fbc02d', '#8e24aa'];
 
@@ -76,6 +79,12 @@ const EstadisticasList = () => {
   const [preguntasPorGrado, setPreguntasPorGrado] = useState([]);
   const [alternativasPorPregunta, setAlternativasPorPregunta] = useState({});
   const [respuestasPorAlternativa, setRespuestasPorAlternativa] = useState({});
+  const [tablaCruzada, setTablaCruzada] = useState(null);
+
+  // Callback estable para evitar bucles infinitos
+  const handleTablaCruzadaChange = useCallback((data) => {
+    setTablaCruzada(data);
+  }, []);
 
   const cargarEstadisticas = useCallback(async () => {
     try {
@@ -344,9 +353,25 @@ const EstadisticasList = () => {
             {/* KPIs y gráficos para la encuesta seleccionada */}
             {encuestaSeleccionada && kpisEncuesta && (
               <Box sx={{ mt: 4 }}>
-                <Typography variant="h6" sx={{ mb: 2 }}>
-                  Resumen de la encuesta: <b>{encuestaSeleccionada.titulo}</b>
-                </Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Typography variant="h6">
+                    Resumen de la encuesta: <b>{encuestaSeleccionada.titulo}</b>
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <ExportarPDF 
+                      tipo="encuesta"
+                      encuesta={encuestaSeleccionada}
+                      kpisEncuesta={kpisEncuesta}
+                      estadisticas={estadisticas}
+                    />
+                    <ExportarExcel
+                      tipo="encuesta"
+                      encuesta={encuestaSeleccionada}
+                      kpisEncuesta={kpisEncuesta}
+                      estadisticas={estadisticas}
+                    />
+                  </Box>
+                </Box>
                 <Grid
                   container
                   sx={{
@@ -443,9 +468,31 @@ const EstadisticasList = () => {
             {/* KPIs y gráficos para el grado seleccionado */}
             {gradoSeleccionado && kpisGrado && (
               <Box sx={{ mt: 4 }}>
-                <Typography variant="h6" sx={{ mb: 2 }}>
-                  Resumen del grado: <b>{gradoSeleccionado.nombre}</b>
-                </Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Typography variant="h6">
+                    Resumen del grado: <b>{gradoSeleccionado.nombre}</b>
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <ExportarPDF 
+                      tipo="grado"
+                      grado={gradoSeleccionado}
+                      kpisGrado={kpisGrado}
+                      preguntasPorGrado={preguntasPorGrado}
+                      alternativasPorPregunta={alternativasPorPregunta}
+                      respuestasPorAlternativa={respuestasPorAlternativa}
+                      tablaCruzada={tablaCruzada}
+                    />
+                    <ExportarExcel
+                      tipo="grado"
+                      grado={gradoSeleccionado}
+                      kpisGrado={kpisGrado}
+                      preguntasPorGrado={preguntasPorGrado}
+                      alternativasPorPregunta={alternativasPorPregunta}
+                      respuestasPorAlternativa={respuestasPorAlternativa}
+                      tablaCruzada={tablaCruzada}
+                    />
+                  </Box>
+                </Box>
                 <Grid
                   container
                   sx={{
@@ -507,6 +554,7 @@ const EstadisticasList = () => {
                           gradoId={gradoSeleccionado.id}
                           pregunta={pregunta}
                           alternativas={alternativasPorPregunta[pregunta.id] || []}
+                          onDataChange={handleTablaCruzadaChange}
                         />
                       </Grid>
                     </Grid>
@@ -529,11 +577,17 @@ const EstadisticasList = () => {
 };
 
 // Componente auxiliar para la tabla cruzada y gráfico apilado
-const CruzadaPreguntaDocenteAlternativa = ({ gradoId, pregunta, alternativas }) => {
+const CruzadaPreguntaDocenteAlternativa = ({ gradoId, pregunta, alternativas, onDataChange }) => {
   const [docentes, setDocentes] = React.useState([]);
   const [conteo, setConteo] = React.useState({}); // {docenteId: {alternativaId: cantidad}}
   const [loading, setLoading] = React.useState(true);
   const theme = useTheme();
+  const onDataChangeRef = React.useRef(onDataChange);
+
+  // Actualizar la referencia cuando cambie el callback
+  React.useEffect(() => {
+    onDataChangeRef.current = onDataChange;
+  }, [onDataChange]);
 
   React.useEffect(() => {
     let mounted = true;
@@ -570,6 +624,16 @@ const CruzadaPreguntaDocenteAlternativa = ({ gradoId, pregunta, alternativas }) 
         setDocentes(docentesOrdenados);
         setConteo(conteoTemp);
         setLoading(false);
+        
+        // Exponer datos al componente padre solo cuando se complete la carga
+        if (onDataChangeRef.current && docentesOrdenados.length > 0) {
+          const alternativasOrdenadas = [...alternativas].sort((a, b) => a.id.localeCompare(b.id));
+          onDataChangeRef.current({
+            docentes: docentesOrdenados,
+            alternativas: alternativasOrdenadas,
+            conteo: conteoTemp
+          });
+        }
       }
     };
     fetchData();
