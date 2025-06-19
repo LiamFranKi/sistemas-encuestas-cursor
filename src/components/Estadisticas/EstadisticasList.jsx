@@ -373,7 +373,7 @@ const EstadisticasList = () => {
                   </Grid>
                 </Grid>
                 <Grid container spacing={2} sx={{ width: '100%' }}>
-                  <Grid item xs={12} md={6} sx={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <Grid sx={{ gridColumn: { xs: 'span 12', md: 'span 6' }, width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                     <Paper sx={{ p: 2, width: '80%', height: 400, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', mx: 'auto', my: 4 }}>
                       <Typography variant="h6" sx={{ mb: 3, fontWeight: 'bold', fontSize: '1.3rem', textAlign: 'center' }}>Gráfico de Barras</Typography>
                       <ResponsiveContainer width="100%" height={400}>
@@ -481,7 +481,7 @@ const EstadisticasList = () => {
                     <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>{`Pregunta ${idx + 1}: ${pregunta.texto}`}</Typography>
                     <Grid container spacing={2} alignItems="flex-start">
                       {/* Tabla de alternativas */}
-                      <Grid item xs={12} md={4}>
+                      <Grid sx={{ gridColumn: { xs: 'span 12', md: 'span 4' } }}>
                         <TableContainer component={Paper} sx={{ mb: 0 }}>
                           <Table size="small">
                             <TableHead>
@@ -502,7 +502,7 @@ const EstadisticasList = () => {
                         </TableContainer>
                       </Grid>
                       {/* Tabla cruzada al costado */}
-                      <Grid item xs={12} md={8}>
+                      <Grid sx={{ gridColumn: { xs: 'span 12', md: 'span 8' } }}>
                         <CruzadaPreguntaDocenteAlternativa
                           gradoId={gradoSeleccionado.id}
                           pregunta={pregunta}
@@ -862,7 +862,7 @@ const EstadisticaGeneralPorAlternativas = ({ gradoId }) => {
             if (rankingDocentes.length === 0) return null;
 
             return (
-              <Grid item xs={12} md={6} lg={4} key={alt.id}>
+              <Grid key={alt.id} sx={{ gridColumn: { xs: 'span 12', md: 'span 6', lg: 'span 4' } }}>
                 <Paper sx={{ p: 2 }}>
                   <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 'bold', textAlign: 'center' }}>
                     Ranking: {alt.texto}

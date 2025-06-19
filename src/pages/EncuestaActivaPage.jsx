@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Button, Typography, Paper, CircularProgress, Alert } from '@mui/material';
-import { getEncuestaActiva } from '../services/firestore';
+import { Box, Button, Typography, Paper, IconButton, Tooltip, CircularProgress, Alert } from '@mui/material';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { useNavigate } from 'react-router-dom';
+import { getEncuestaActiva } from '../services/firestore';
 
 const logoUrl = '/assets/vanguard-logo.png';
 
@@ -9,7 +10,16 @@ const EncuestaActivaPage = () => {
   const [encuesta, setEncuesta] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [yaRespondio, setYaRespondio] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Verificar si ya respondió la encuesta
+    const encuestaRespondida = localStorage.getItem('encuesta-respondida');
+    if (encuestaRespondida === 'true') {
+      setYaRespondio(true);
+    }
+  }, []);
 
   useEffect(() => {
     const fetchEncuesta = async () => {
@@ -24,6 +34,10 @@ const EncuestaActivaPage = () => {
     };
     fetchEncuesta();
   }, []);
+
+  const handleEmpezar = () => {
+    navigate('/seleccionar-grado', { state: { encuestaId: encuesta.id } });
+  };
 
   return (
     <Box
@@ -45,6 +59,10 @@ const EncuestaActivaPage = () => {
             <Box sx={{ mt: 4 }}><CircularProgress /></Box>
           ) : error ? (
             <Alert severity="warning" sx={{ mt: 4 }}>{error}</Alert>
+          ) : yaRespondio ? (
+            <Alert severity="info" sx={{ mt: 4, fontSize: '1.2rem' }}>
+              Ya has respondido esta encuesta. ¡Gracias por tu participación!
+            </Alert>
           ) : encuesta ? (
             <>
               <Typography variant="h4" fontWeight={700} color="secondary" gutterBottom sx={{ mb: 2, mt: 4 }}>
@@ -73,7 +91,7 @@ const EncuestaActivaPage = () => {
                     transform: 'scale(1.04)',
                   },
                 }}
-                onClick={() => navigate('/seleccionar-grado', { state: { encuestaId: encuesta.id } })}
+                onClick={handleEmpezar}
               >
                 Empezar
               </Button>

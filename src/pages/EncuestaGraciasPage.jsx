@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -12,6 +12,11 @@ const logoUrl = '/assets/vanguard-logo.png';
 
 const EncuestaGraciasPage = () => {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Marcar que el usuario ya completó la encuesta
+    localStorage.setItem('encuesta-respondida', 'true');
+  }, []);
 
   const handleCerrar = () => {
     navigate('/');

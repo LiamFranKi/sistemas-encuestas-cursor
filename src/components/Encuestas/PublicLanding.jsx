@@ -10,6 +10,7 @@ import {
   Box,
   Chip,
   Stack,
+  Alert,
 } from '@mui/material';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../../config/firebase';
@@ -31,8 +32,17 @@ const pastelColors = [
 const PublicLanding = () => {
   const [grados, setGrados] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [yaRespondio, setYaRespondio] = useState(false);
   const navigate = useNavigate();
   const { encuesta, loading: loadingEncuesta } = useEncuestaActiva();
+
+  useEffect(() => {
+    // Verificar si ya respondió la encuesta
+    const encuestaRespondida = localStorage.getItem('encuesta-respondida');
+    if (encuestaRespondida === 'true') {
+      setYaRespondio(true);
+    }
+  }, []);
 
   useEffect(() => {
     const fetchGrados = async () => {
@@ -80,6 +90,16 @@ const PublicLanding = () => {
     );
   }
 
+  if (yaRespondio) {
+    return (
+      <Container maxWidth="md" sx={{ py: 4 }}>
+        <Alert severity="info" sx={{ fontSize: '1.2rem', textAlign: 'center' }}>
+          Ya has respondido esta encuesta. ¡Gracias por tu participación!
+        </Alert>
+      </Container>
+    );
+  }
+
   return (
     <Container maxWidth="md" sx={{ py: 4 }}>
       <Typography variant="h4" component="h1" gutterBottom align="center">
@@ -91,7 +111,7 @@ const PublicLanding = () => {
 
       <Grid container spacing={4}>
         {grados.map((grado, idx) => (
-          <Grid key={grado.id} xs={12} sm={6} md={4} item>
+          <Grid key={grado.id} sx={{ gridColumn: { xs: 'span 12', sm: 'span 6', md: 'span 4' } }}>
             <Card 
               sx={{ 
                 height: '100%',

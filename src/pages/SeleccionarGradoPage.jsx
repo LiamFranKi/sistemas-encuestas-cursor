@@ -61,7 +61,7 @@ const SeleccionarGradoPage = () => {
           ) : (
             <Grid container spacing={3} justifyContent="center">
               {grados.map((grado) => (
-                <Grid item xs={12} sm={6} md={4} lg={3} key={grado.id}>
+                <Grid key={grado.id} sx={{ gridColumn: { xs: 'span 12', sm: 'span 6', md: 'span 4', lg: 'span 3' } }}>
                   <Card sx={{ borderRadius: 3, boxShadow: 3 }}>
                     <CardContent>
                       <Typography variant="h6" fontWeight={600} color="primary">

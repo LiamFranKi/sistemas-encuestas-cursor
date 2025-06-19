@@ -14,6 +14,15 @@ const LandingPage = () => {
   const [grados, setGrados] = useState([]);
   const [loadingGrados, setLoadingGrados] = useState(true);
   const [errorGrados, setErrorGrados] = useState(null);
+  const [yaRespondio, setYaRespondio] = useState(false);
+
+  useEffect(() => {
+    // Verificar si ya respondió la encuesta
+    const encuestaRespondida = localStorage.getItem('encuesta-respondida');
+    if (encuestaRespondida === 'true') {
+      setYaRespondio(true);
+    }
+  }, []);
 
   useEffect(() => {
     const fetchEncuesta = async () => {
@@ -97,66 +106,77 @@ const LandingPage = () => {
           <Typography variant="h6" color="text.secondary" sx={{ mb: 3 }}>
             ¡Bienvenido! Aquí podrás participar en las encuestas de tu colegio de manera fácil y segura.
           </Typography>
-          {/* Encuesta activa */}
-          {loadingEncuesta ? (
-            <Box sx={{ mt: 2 }}><CircularProgress /></Box>
-          ) : errorEncuesta ? (
-            <Alert severity="warning" sx={{ mt: 2 }}>{errorEncuesta}</Alert>
-          ) : encuesta ? (
-            <Box sx={{ mb: 4, width: '100%' }}>
-              <Typography variant="h4" fontWeight={700} color="secondary" sx={{ mb: 1 }}>
-                {encuesta.titulo}
-              </Typography>
-              {encuesta.descripcion && (
-                <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
-                  {encuesta.descripcion}
-                </Typography>
-              )}
-            </Box>
-          ) : null}
-          {/* Grados */}
-          {loadingGrados ? (
-            <Box sx={{ mt: 4 }}><CircularProgress /></Box>
-          ) : errorGrados ? (
-            <Alert severity="warning" sx={{ mt: 4 }}>{errorGrados}</Alert>
+          {yaRespondio ? (
+            <Alert severity="info" sx={{ mt: 4, fontSize: '1.2rem' }}>
+              Ya has respondido esta encuesta. ¡Gracias por tu participación!
+            </Alert>
           ) : (
-            <Grid container columns={12} spacing={3} justifyContent="center">
-              {grados.map((grado) => (
-                <Grid key={grado.id} sx={{ gridColumn: 'span 4' }}>
-                  <Card sx={{ borderRadius: 3, boxShadow: 3, background: '#e3f2fd' }}>
-                    <CardContent>
-                      <Typography variant="h6" fontWeight={600} color="primary">
-                        {grado.nombre}
-                      </Typography>
-                      <Typography variant="body1" color="text.secondary">
-                        Nivel: {grado.nivel}
-                      </Typography>
-                    </CardContent>
-                    <CardActions sx={{ justifyContent: 'center', pb: 2 }}>
-                      <Button
-                        variant="contained"
-                        color="primary"
-                        onClick={() => handleComenzar(grado.id)}
+            <>
+              {/* Encuesta activa */}
+              {loadingEncuesta ? (
+                <Box sx={{ mt: 2 }}><CircularProgress /></Box>
+              ) : errorEncuesta ? (
+                <Alert severity="warning" sx={{ mt: 2 }}>{errorEncuesta}</Alert>
+              ) : encuesta ? (
+                <Box sx={{ mb: 4, width: '100%' }}>
+                  <Typography variant="h4" fontWeight={700} color="secondary" sx={{ mb: 1 }}>
+                    {encuesta.titulo}
+                  </Typography>
+                  {encuesta.descripcion && (
+                    <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
+                      {encuesta.descripcion}
+                    </Typography>
+                  )}
+                </Box>
+              ) : null}
+              {/* Grados */}
+              {loadingGrados ? (
+                <Box sx={{ mt: 4 }}><CircularProgress /></Box>
+              ) : errorGrados ? (
+                <Alert severity="warning" sx={{ mt: 4 }}>{errorGrados}</Alert>
+              ) : (
+                <Grid container spacing={3} sx={{ maxWidth: 800 }}>
+                  {grados.map((grado) => (
+                    <Grid key={grado.id} sx={{ gridColumn: { xs: 'span 12', sm: 'span 6', md: 'span 4' } }}>
+                      <Card
                         sx={{
-                          fontWeight: 600,
-                          borderRadius: 2,
-                          px: 4,
-                          py: 1,
-                          boxShadow: 2,
-                          background: 'linear-gradient(90deg, #1e3c72 0%, #2a5298 100%)',
-                          color: '#fff',
+                          height: '100%',
+                          cursor: 'pointer',
+                          transition: 'transform 0.2s, box-shadow 0.2s',
                           '&:hover': {
-                            background: 'linear-gradient(90deg, #2a5298 0%, #1e3c72 100%)',
+                            transform: 'scale(1.05)',
+                            boxShadow: 8,
                           },
                         }}
+                        onClick={() => handleComenzar(grado.id)}
                       >
-                        Comenzar
-                      </Button>
-                    </CardActions>
-                  </Card>
+                        <CardContent>
+                          <Typography variant="h6" component="h2" gutterBottom>
+                            {grado.nombre}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                            {grado.descripcion}
+                          </Typography>
+                          <Typography variant="caption" color="primary" fontWeight={600}>
+                            Nivel: {grado.nivel}
+                          </Typography>
+                        </CardContent>
+                        <CardActions>
+                          <Button
+                            size="small"
+                            variant="contained"
+                            fullWidth
+                            onClick={() => handleComenzar(grado.id)}
+                          >
+                            Comenzar
+                          </Button>
+                        </CardActions>
+                      </Card>
+                    </Grid>
+                  ))}
                 </Grid>
-              ))}
-            </Grid>
+              )}
+            </>
           )}
         </Box>
       </Paper>
