@@ -5,32 +5,48 @@
 ### Estructura General
 - **Frontend:** React + MUI, estructura modular por entidades (grados, docentes, encuestas, preguntas, alternativas, usuarios, relaciones).
 - **Backend:** Firebase Firestore (NoSQL), autenticación con Firebase Auth.
+- **Sistema de Roles:**
+  - **`admin`**: Acceso completo a todos los módulos de mantenimiento y estadísticas.
+  - **`user`**: Acceso de solo lectura al módulo de **Estadísticas**.
+- **Lógica de Roles:** Implementada a través de `RoleContext.js`, que lee el campo `role` de la colección `users` en Firestore.
 - **Reglas de seguridad:** Solo usuarios con claim `admin` pueden escribir en módulos críticos (grados, docentes, encuestas, preguntas, alternativas, relaciones). Los estudiantes solo pueden leer y responder encuestas.
 - **Relaciones:**
   - `grados_docentes`: Relaciona grados con docentes.
   - `encuesta_pregunta`: Relaciona encuestas con preguntas.
   - `pregunta_alternativa`: Relaciona preguntas con alternativas.
-- **Panel de administración:** Solo accesible para usuarios autenticados con claim `admin`.
-- **Asignación de claims:** Se realiza con script Node.js usando el SDK de Firebase Admin.
+- **Panel de administración:** Menú dinámico que se adapta según el rol del usuario.
+- **Asignación de roles:** Se gestiona a través de la colección `users` en Firestore y se puede automatizar con el script `autenticarUsuario.js`.
 
 ### Flujos principales
-- **Administradores:** Pueden crear, editar y eliminar grados, docentes, preguntas, alternativas, encuestas y relaciones.
-- **Estudiantes:** Solo pueden responder encuestas activas.
+- **Administradores:** Pueden crear, editar y eliminar todas las entidades del sistema.
+- **Usuarios (Rol `user`):** Pueden iniciar sesión y ver exclusivamente el panel de estadísticas.
+- **Estudiantes (No autenticados):** Solo pueden responder encuestas activas a través de la página de inicio.
 - **Sincronización:** Al asignar docentes a un grado, el diálogo muestra marcados los docentes ya relacionados (optimizado para rendimiento).
 
 ### Decisiones y mejoras recientes
+- Implementación de un sistema de roles desacoplado que no requiere claims de Firebase para roles de solo lectura, simplificando la gestión.
 - Optimización de la consulta de docentes por grado usando `where('__name__', 'in', [...])` para mayor velocidad.
 - Corrección de reglas de seguridad para producción: solo admin puede escribir.
-- Documentación de cómo asignar claims de admin y cómo manejar roles personalizados.
+- Documentación completa del proceso de deploy, limpieza de datos y configuración de seguridad.
 - Limpieza de campos innecesarios (`activo`) y scripts de mantenimiento.
 - Commit de todos los cambios importantes tras cada mejora.
 
 ### Próximos pasos sugeridos
-- Implementar panel de administración para asignar roles/claims desde la web.
+- Implementar un panel de administración para gestionar roles de usuarios desde la interfaz web.
 - Mejorar la gestión de roles personalizados (ej: director, editor, etc).
 - Mantener este changelog actualizado tras cada cambio relevante.
 
-## [No Versionado]
+## [Historial de Cambios]
+
+### 2024-12-19 - Sistema de Roles y Permisos
+- **feat(auth)**: Implementación de sistema de roles y permisos.
+  - **`RoleContext.js`**: Nuevo contexto para gestionar el rol del usuario (`admin`, `user`) leyéndolo desde Firestore.
+  - **Integración**: `RoleProvider` envuelve la aplicación en `App.js` para proveer el contexto de rol globalmente.
+  - **`DashboardLayout.jsx`**: Modificado para mostrar un menú dinámico basado en el rol del usuario.
+    - **Rol `admin`**: Ve todos los módulos de mantenimiento y estadísticas.
+    - **Rol `user`**: Solo puede ver el módulo de **Estadísticas** y cerrar sesión.
+  - **Redirección automática**: Usuarios con rol `user` que intenten acceder a rutas de administrador son redirigidos a `/estadisticas`.
+  - **`autenticarUsuario.js`**: Nuevo script para crear y autenticar usuarios en Firebase Auth y registrarlos en la colección `users` de Firestore con un rol específico.
 
 ### 2024-12-19 - Deploy a Producción y Configuración de Seguridad
 - **🚀 feat**: Deploy exitoso a Firebase Hosting

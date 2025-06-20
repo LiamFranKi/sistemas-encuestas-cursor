@@ -4,6 +4,7 @@ import { ThemeProvider, CssBaseline, CircularProgress } from '@mui/material';
 import { theme } from './theme';
 import ErrorBoundary from './components/ErrorBoundary';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { RoleProvider } from './contexts/RoleContext';
 import { SnackbarProvider } from './contexts/SnackbarContext';
 import Login from './components/Auth/Login';
 import Register from './components/Auth/Register';
@@ -140,11 +141,13 @@ function App() {
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <AuthProvider>
-          <SnackbarProvider>
-            <Router>
-              <AppRoutes />
-            </Router>
-          </SnackbarProvider>
+          <RoleProvider>
+            <SnackbarProvider>
+              <Router>
+                <AppRoutes />
+              </Router>
+            </SnackbarProvider>
+          </RoleProvider>
         </AuthProvider>
       </ThemeProvider>
     </ErrorBoundary>

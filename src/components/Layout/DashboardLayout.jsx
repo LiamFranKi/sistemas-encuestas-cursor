@@ -28,6 +28,7 @@ import {
   BarChart as BarChartIcon
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
+import { useRole } from '../../contexts/RoleContext';
 
 const drawerWidth = 240;
 
@@ -37,6 +38,7 @@ const DashboardLayout = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { logout } = useAuth();
+  const { userRole, isAdmin, isUser } = useRole();
 
   const handleDrawerOpen = () => {
     setOpen(true);
@@ -72,7 +74,8 @@ const DashboardLayout = ({ children }) => {
     return () => clearTimeout(timer);
   }, [location.pathname]);
 
-  const menuItems = [
+  // Menú completo para administradores
+  const adminMenuItems = [
     { text: 'Dashboard', icon: <DashboardIcon sx={{ color: '#1976d2' }} />, path: '/dashboard' },
     { text: 'Grados', icon: <SchoolIcon sx={{ color: '#388e3c' }} />, path: '/grados' },
     { text: 'Docentes', icon: <PersonIcon sx={{ color: '#fbc02d' }} />, path: '/docentes' },
@@ -82,6 +85,21 @@ const DashboardLayout = ({ children }) => {
     { text: 'Usuarios', icon: <GroupIcon sx={{ color: '#0288d1' }} />, path: '/usuarios' },
     { text: 'Estadísticas', icon: <BarChartIcon sx={{ color: '#43a047' }} />, path: '/estadisticas' },
   ];
+
+  // Menú limitado para usuarios normales
+  const userMenuItems = [
+    { text: 'Estadísticas', icon: <BarChartIcon sx={{ color: '#43a047' }} />, path: '/estadisticas' },
+  ];
+
+  // Seleccionar menú según el rol
+  const menuItems = isAdmin ? adminMenuItems : userMenuItems;
+
+  // Redirigir usuarios "user" a estadísticas si intentan acceder a otras rutas
+  useEffect(() => {
+    if (isUser && location.pathname !== '/estadisticas') {
+      navigate('/estadisticas');
+    }
+  }, [isUser, location.pathname, navigate]);
 
   return (
     <Box sx={{ display: 'flex' }}>
@@ -97,7 +115,7 @@ const DashboardLayout = ({ children }) => {
             <MenuIcon />
           </IconButton>
           <Typography variant="h6" noWrap component="div">
-            Sistema de Encuestas
+            Sistema de Encuestas {isUser && '- Solo Estadísticas'}
           </Typography>
         </Toolbar>
       </AppBar>
